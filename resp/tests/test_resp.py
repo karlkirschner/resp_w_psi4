@@ -4,7 +4,8 @@ import pytest
 
 def test_resp_1():
     import psi4
-    import resp
+    from .. import driver
+#    import resp
     import numpy as np
 
     mol = psi4.geometry(""" C   1.45051389  -0.06628932   0.00000000
