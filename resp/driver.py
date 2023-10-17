@@ -29,6 +29,82 @@ import vdw_surface
 bohr_to_angstrom = 0.52917721092
 
 
+def write_results(flags_dict: dict, radii: list, scale_factor, molecules, data, notes, fitting_methods, qf):
+    ''' Write out the results to disk
+    '''
+
+    with open("results.out", "w") as outfile:
+        outfile.write("Electrostatic potential parameters\n")
+        if flags_dict['grid'] == 'None':
+            outfile.write("    van der Waals radii (Angstrom):\n")
+            for i, j in radii.items():
+                outfile.write(f"{' ':38s}{i} = {j/scale_factor:.3f}\n")
+            outfile.write(f"    VDW scale factors: {' ':14s} ")
+            for i in flags_dict["vdw_scale_factors"]:
+                outfile.write(f"{i} ")
+            outfile.write(f"\n    VDW point density: {' ':14s} {flags_dict['vdw_point_density']:.3f}\n")
+        if flags_dict['esp'] == 'None':
+            outfile.write(f"    ESP method: {' ':21s} {flags_dict['method_esp']}\n")
+            outfile.write(f"    ESP basis set: {' ':18s} {flags_dict['basis_esp']}\n")
+
+        for conf_n in range(len(flags_dict['input_files'])):
+            with open(flags_dict['input_files'][conf_n]) as f:
+                conf_xyz = f.read()
+
+            molec_name = os.path.splitext(flags_dict['input_files'][conf_n])[0]
+            conf = psi4.core.Molecule.from_string(conf_xyz, dtype='xyz', name=molec_name)
+
+            outfile.write("\nGrid information (see %i_%s_grid.dat in %s)\n"
+                    %(conf_n+1, conf.name(), conf.units()))
+            outfile.write(f"    Number of grid points: {' ':10s} {len(data['esp_values'][conf_n])}\n")
+            outfile.write(f"\nQuantum electrostatic potential (see {conf_n+1}_{conf.name()}_grid_esp.dat)\n")
+
+        outfile.write("\nConstraints\n")
+        if flags_dict['constraint_charge'] != 'None':
+            outfile.write("    Charge constraints\n")
+            outfile.write(f"        Total charge of {flags_dict['constraint_charge']}")  # %12.8f on the set" %i[0])
+                # for j in i[1]:
+                #     outfile.write("%4d" %j)
+            outfile.write("\n")
+
+        if flags_dict['constraint_group'] != 'None':
+            outfile.write("    Equality constraints\n")
+            outfile.write("        Equal charges on atoms\n")
+            for i in flags_dict['constraint_group']:
+                outfile.write("                               ")
+                for j in i:
+                    outfile.write("%4d" %j)
+                outfile.write("\n")
+
+        outfile.write("\nRestraint\n")
+        if flags_dict['restraint']:
+            outfile.write("    Hyperbolic restraint to a charge of zero\n")
+            if flags_dict['ihfree']:
+                outfile.write("    Hydrogen atoms are not restrained\n")
+            outfile.write(f"    resp_a:  {' ':23s}  {flags_dict['resp_a']:.4f}\n")
+            outfile.write(f"    resp_b:  {' ':24s} {flags_dict['resp_b']:.4f}\n")
+
+        outfile.write("\nFit\n")
+        outfile.write(f"{str(notes)}\n")
+
+        outfile.write("\nElectrostatic Potential Charges\n")
+        outfile.write("   Center  Symbol")
+        for i in fitting_methods:
+            outfile.write("%10s" %i)
+        outfile.write("\n")
+        for i in range(len(data['symbols'])):
+            # outfile.write("  %5d    %s     " %(i+1, data['symbols'][i]))
+            outfile.write(f"{i+1:6d}       {data['symbols'][i]}    ")
+            for j in qf:
+                outfile.write("%12.8f" %j[i])
+            outfile.write("\n")
+
+        outfile.write("\nTotal Charge:     ")
+        for i in qf:
+            outfile.write(f"{np.sum(i):12.8f}")
+        outfile.write('\n')
+
+
 def parse_ini(input_ini):
     ''' Process the input configuration file.
 
@@ -96,26 +172,19 @@ def parse_ini(input_ini):
 
 
 # def resp(molecules, options=None):
-def resp(input_ini):
-    """RESP code driver.
+def resp(input_ini) -> list:
+    """ RESP code driver.
 
-    Parameters
-    ---------- 
-    molecules : list
-        list of psi4.Molecule instances
-    options_list : dict, optional
-        a dictionary of user's defined options
+    Args
+        input_ini : input configuration for the calculation
 
     Returns
-    -------
-    charges : list
-        list of charges
+        charges : charges
 
-    Note
-    ----
-    output files : mol_results.dat: fitting results
-                   mol_grid.dat: grid points in molecule.units
-                   mol_grid_esp.dat: QM esp valuese in a.u. 
+    Notes
+        output files : mol_results.dat: fitting results
+                       mol_grid.dat: grid points in molecule.units
+                       mol_grid_esp.dat: QM esp valuese in a.u. 
     """
 
     if not isinstance(input_ini, str):
@@ -269,68 +338,6 @@ def resp(input_ini):
     # qf, labelf, notes = espfit.fit(options=flags_dict, data=data)
     q_fitted, fitting_methods, notes = espfit.fit(options=flags_dict, data=data)
 
-    # # Write the results to disk
-    # with open("results.out", "w") as f:
-    #     f.write("Electrostatic potential parameters\n")
-    #     if not options['GRID']:
-    #         f.write("    van der Waals radii (Angstrom):\n")
-    #         for i, j in radii.items():
-    #             f.write("                               %8s%8.3f\n" %(i, j/scale_factor))
-    #         f.write("    VDW scale factors:              ")
-    #         for i in options["VDW_SCALE_FACTORS"]:
-    #             f.write('%6.2f' %i)
-    #         f.write('\n')
-    #         f.write("    VDW point density:                %.3f\n" %(options["VDW_POINT_DENSITY"]))
-    #     if not options['ESP']:
-    #         f.write("    ESP method:                       %s\n" %options['METHOD_ESP'])
-    #         f.write("    ESP basis set:                    %s\n" %options['BASIS_ESP'])
+    write_results(flags_dict=flags_dict, radii=radii, scale_factor=scale_factor, molecules=conf, data=data, notes=notes, fitting_methods=fitting_methods, qf=q_fitted)
 
-    #     for conf_n in range(len(molecules)):
-    #         f.write("\nGrid information (see %i_%s_grid.dat in %s)\n"
-    #                 %(conf_n+1, molecules[conf_n].name(), molecules[conf_n].units()))
-    #         f.write("    Number of grid points:            %d\n" %len(data['esp_values'][conf_n]))
-    #         f.write("\nQuantum electrostatic potential (see %i_%s_grid_esp.dat)\n" %(conf_n+1, molecules[conf_n].name()))
-
-    #     f.write("\nConstraints\n")
-    #     if options['CONSTRAINT_CHARGE']:
-    #         f.write("    Charge constraints\n")
-    #         for i in options['CONSTRAINT_CHARGE']:
-    #             f.write("        Total charge of %12.8f on the set" %i[0])
-    #             for j in i[1]:
-    #                 f.write("%4d" %j)
-    #             f.write("\n")
-    #     if options['CONSTRAINT_GROUP']:
-    #         f.write("    Equality constraints\n")
-    #         f.write("        Equal charges on atoms\n")
-    #         for i in options['CONSTRAINT_GROUP']:
-    #             f.write("                               ")
-    #             for j in i:
-    #                 f.write("%4d" %j)
-    #             f.write("\n")
-
-    #     f.write("\nRestraint\n")
-    #     if options['RESTRAINT']:
-    #         f.write("    Hyperbolic restraint to a charge of zero\n")
-    #         if options['IHFREE']:
-    #             f.write("    Hydrogen atoms are not restrained\n")
-    #         f.write("    resp_a:                           %.4f\n" %(options["RESP_A"]))
-    #         f.write("    resp_b:                           %.4f\n" %(options["RESP_B"]))
-
-    #     f.write("\nFit\n")
-    #     f.write(notes)
-    #     f.write("\nElectrostatic Potential Charges\n")
-    #     f.write("   Center  Symbol")
-    #     for i in labelf:
-    #         f.write("%10s" %i)
-    #     f.write("\n")
-    #     for i in range(data['natoms']):
-    #         f.write("  %5d    %s     " %(i+1, data['symbols'][i]))
-    #         for j in qf:
-    #             f.write("%12.8f" %j[i])
-    #         f.write("\n")
-    #     f.write("Total Charge:    ")
-    #     for i in qf:
-    #         f.write("%12.8f" %np.sum(i))
-    #     f.write('\n')
-
-    # return qf
+    return q_fitted
