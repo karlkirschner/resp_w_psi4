@@ -79,19 +79,20 @@ def parse_ini(input_ini):
             for key_float in ['vdw_radii']:
                 if key == key_float:
                     flags_dict[key] = {}
-            
+
             for key_float in ['vdw_point_density', 'resp_a', 'resp_b', 'toler']: # any single float
                 if key == key_float:  # good for any list of floats
                     flags_dict[key] = float(flags_dict[key])
+
+            for key_float in ['max_it']: # any single int
+                if key == key_float:  # good for any list of floats
+                    flags_dict[key] = int(flags_dict[key])
 
             for key_float in ['restraint', 'ihfree']: # any single bool
                 if key == key_float:  # good for any list of floats
                     flags_dict[key] = bool(flags_dict[key])
 
     return flags_dict
-
-
-
 
 
 # def resp(molecules, options=None):
@@ -179,16 +180,14 @@ def resp(input_ini):
     # if 'CONSTRAINT_GROUP' not in options:
     #     options['CONSTRAINT_GROUP'] = []
 
-
-
-
     # Same data for all conformer
     data = {}
 
-    with open(flags_dict['input_files'][0]) as f:
-        conformer_1_xyz = f.read()
+    with open(flags_dict['input_files'][0]) as infile:
+        conformer_1_xyz = infile.read()
 
-    conf_1 = psi4.core.Molecule.from_string(conformer_1_xyz, dtype='xyz')
+    molec_name = os.path.splitext(flags_dict['input_files'][0])[0]
+    conf_1 = psi4.core.Molecule.from_string(conformer_1_xyz, dtype='xyz', name=molec_name)
 
     data['natoms'] = conf_1.natom()
 
@@ -197,7 +196,6 @@ def resp(input_ini):
         data['symbols'].append(conf_1.symbol(i))
 
     data['mol_charge'] = conf_1.molecular_charge()
-
 
     # Data for each conformer
     data['coordinates'] = []
@@ -209,7 +207,9 @@ def resp(input_ini):
         with open(flags_dict['input_files'][conf_n]) as f:
             conf_xyz = f.read()
 
-        conf = psi4.core.Molecule.from_string(conf_xyz, dtype='xyz')
+        molec_name = os.path.splitext(flags_dict['input_files'][conf_n])[0]
+
+        conf = psi4.core.Molecule.from_string(conf_xyz, dtype='xyz', name=molec_name)
         coordinates = conf.geometry()
         coordinates = coordinates.np.astype('float')*bohr_to_angstrom
         data['coordinates'].append(coordinates)
@@ -241,34 +241,34 @@ def resp(input_ini):
             else:
                 np.savetxt('grid.dat', points, fmt='%15.10f')
 
-## CONTINUE HERE
-    #     # Calculate ESP values at the grid
-    #     if options['ESP']:
-    #         # Read electrostatic potential values
-    #         data['esp_values'].append(np.loadtxt(options['ESP'][conf_n]))
-    #         np.savetxt('grid_esp.dat', data['esp_values'][-1], fmt='%15.10f')
-    #     else:
-    #         import psi4
-    #         psi4.core.set_active_molecule(molecules[conf_n])
-    #         psi4.set_options({'basis': options['BASIS_ESP']})
-    #         psi4.set_options(options.get('PSI4_OPTIONS', {}))
-    #         psi4.prop(options['METHOD_ESP'], properties=['GRID_ESP'])
-    #         data['esp_values'].append(np.loadtxt('grid_esp.dat'))
-    #         psi4.core.clean()
-            
-    #     os.system("mv grid.dat %i_%s_grid.dat" %(conf_n+1, molecules[conf_n].name()))
-    #     os.system("mv grid_esp.dat %i_%s_grid_esp.dat" %(conf_n+1, molecules[conf_n].name()))
-    #     # Build a matrix of the inverse distance from each ESP point to each nucleus
-    #     invr = np.zeros((len(points), len(coordinates)))
-    #     for i in range(invr.shape[0]):
-    #         for j in range(invr.shape[1]):
-    #             invr[i, j] = 1/np.linalg.norm(points[i]-coordinates[j])
-    #     data['invr'].append(invr*bohr_to_angstrom) # convert to atomic units
-    #     data['coordinates'][-1] /= bohr_to_angstrom # convert to angstroms
+        # Calculate ESP values at the grid
+        if flags_dict['esp'] != 'None':
+            data['esp_values'].append(np.loadtxt(flags_dict['esp'][conf_n]))
+            np.savetxt('grid_esp.dat', data['esp_values'][-1], fmt='%15.10f')
+        else:
+            psi4.core.set_active_molecule(conf)
+            psi4.set_options({'basis': flags_dict['basis_esp']})
+            psi4.set_options(flags_dict.get('psi4_options', {}))   ### TODO: Figure this out
+            psi4.prop(flags_dict['method_esp'], properties=['grid_esp'])
+            data['esp_values'].append(np.loadtxt('grid_esp.dat'))
+            psi4.core.clean()
 
-    # # Calculate charges
-    # qf, labelf, notes = espfit.fit(options, data)
-    
+        os.system(f"mv grid.dat {conf_n+1}_{conf.name()}_grid.dat")
+        os.system(f"mv grid_esp.dat {conf_n+1}_{conf.name()}_grid_esp.dat")
+
+        # Build a matrix of the inverse distance from each ESP point to each nucleus
+        invr = np.zeros((len(points), len(coordinates)))
+        for i in range(invr.shape[0]):
+            for j in range(invr.shape[1]):
+                invr[i, j] = 1/np.linalg.norm(points[i]-coordinates[j])
+
+        data['invr'].append(invr*bohr_to_angstrom)  # convert to atomic units
+        data['coordinates'][-1] /= bohr_to_angstrom # convert to angstroms
+
+    # Calculate charges
+    # qf, labelf, notes = espfit.fit(options=flags_dict, data=data)
+    q_fitted, fitting_methods, notes = espfit.fit(options=flags_dict, data=data)
+
     # # Write the results to disk
     # with open("results.out", "w") as f:
     #     f.write("Electrostatic potential parameters\n")
