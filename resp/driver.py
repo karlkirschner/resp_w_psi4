@@ -29,20 +29,24 @@ import vdw_surface
 bohr_to_angstrom = 0.52917721092
 
 
-def write_results(flags_dict: dict, radii: list, scale_factor, molecules, data, notes, fitting_methods, qf):
+def write_results(flags_dict: dict, radii: dict, scale_factor, molecules, data, notes, fitting_methods, qf, output_file):
     ''' Write out the results to disk
     '''
 
-    with open("results.out", "w") as outfile:
+    with open(output_file, "w") as outfile:
         outfile.write("Electrostatic potential parameters\n")
-        if flags_dict['grid'] == 'None':
-            outfile.write("    van der Waals radii (Angstrom):\n")
-            for i, j in radii.items():
-                outfile.write(f"{' ':38s}{i} = {j/scale_factor:.3f}\n")
-            outfile.write(f"    VDW scale factors: {' ':14s} ")
-            for i in flags_dict["vdw_scale_factors"]:
-                outfile.write(f"{i} ")
-            outfile.write(f"\n    VDW point density: {' ':14s} {flags_dict['vdw_point_density']:.3f}\n")
+        outfile.write("    van der Waals radii (Angstrom):\n")
+
+        for element, radius in radii.items():
+            outfile.write(f"{' ':38s}{element} = {radius:.3f}\n")
+
+        outfile.write(f"    VDW scale factors: {' ':14s} ")
+
+        for i in flags_dict["vdw_scale_factors"]:
+            outfile.write(f"{i} ")
+
+        outfile.write(f"\n    VDW point density: {' ':14s} {flags_dict['vdw_point_density']:.3f}\n")
+
         if flags_dict['esp'] == 'None':
             outfile.write(f"    ESP method: {' ':21s} {flags_dict['method_esp']}\n")
             outfile.write(f"    ESP basis set: {' ':18s} {flags_dict['basis_esp']}\n")
@@ -118,21 +122,6 @@ def parse_ini(input_ini):
     config = configparser.ConfigParser()
     config.read(input_ini)
 
-    # flags = ['vdw_scale_factors',
-    #          'vdw_point_density',
-    #          'esp',
-    #          'grid',
-    #          'weight',
-    #          'restraint',
-    #          'resp_a',
-    #          'resp_b',
-    #          'ihfree',
-    #          'toler',
-    #          'max_it',
-    #          'method_esp',
-    #          'basis_esp'
-    #         ]
-
     # flags_dict = dict.fromkeys(flags)
     flags_dict = {}
 
@@ -144,17 +133,22 @@ def parse_ini(input_ini):
             if key == 'input_files':  # good for any list of strings
                 flags_dict[key] = [item.strip("'") for item in flags_dict[key].split(",")]
 
-            for key_float in ['esp', 'grid', 'constraint_charge']:
+            for key_float in ['constraint_charge']:
                 if (key == key_float) and (flags_dict[key] != 'None'):
                     flags_dict[key] = [float(item.strip("'")) for item in flags_dict[key].split(",")]
+
+            for key_float in ['esp', 'grid']:
+                if (key == key_float) and (flags_dict[key] != 'None'):
+                    flags_dict[key] = [str(item.strip("'")) for item in flags_dict[key].split(",")]
 
             for key_float in ['vdw_scale_factors', 'weight']: # any list of float
                 if key == key_float:  # good for any list of floats
                     flags_dict[key] = [float(item.strip("'")) for item in flags_dict[key].split(",")]
 
             for key_float in ['vdw_radii']:
-                if key == key_float:
-                    flags_dict[key] = {}
+                if (key == key_float) and (flags_dict[key] != 'None'):
+                    radii_list = (atom_radius.replace('\n', '').split('=') for atom_radius in flags_dict[key].split(","))
+                    flags_dict[key] = {element: float(radius) for element, radius in radii_list}
 
             for key_float in ['vdw_point_density', 'resp_a', 'resp_b', 'toler']: # any single float
                 if key == key_float:  # good for any list of floats
@@ -192,6 +186,7 @@ def resp(input_ini) -> list:
 
 
     flags_dict = parse_ini(input_ini)
+    output_file = input_ini.replace('ini', 'out')
 
     print('KNK flags:', flags_dict)
 
@@ -283,22 +278,28 @@ def resp(input_ini) -> list:
         coordinates = coordinates.np.astype('float')*bohr_to_angstrom
         data['coordinates'].append(coordinates)
 
+        scale_factor_list = flags_dict['vdw_scale_factors']
+
         if flags_dict['grid'] != 'None':
             # Read grid points
             points = np.loadtxt(flags_dict['grid'][conf_n])
-            np.savetxt('test.dat', points, fmt='%15.10f')
+            radii = flags_dict['vdw_radii']
+
+            # scale_factor = None
+            # np.savetxt('test.dat', points, fmt='%15.10f')
+
             if 'Bohr' in str(conf.units()):
                 points *= bohr_to_angstrom
 
         else:
-            # Get the points at which we're going to calculate the ESP
+            # Get the points for calculating the ESP
             points = []
-            for scale_factor in flags_dict['vdw_scale_factors']:
-                shell, radii = vdw_surface.vdw_surface(coordinates,
-                                                       data['symbols'],
-                                                       scale_factor,
-                                                       flags_dict['vdw_point_density'],
-                                                       flags_dict['vdw_radii'])
+            for scale_factor in scale_factor_list:
+                shell, radii = vdw_surface.vdw_surface(coordinates=coordinates,
+                                                       element_list=data['symbols'],
+                                                       scale_factor=scale_factor,
+                                                       density=flags_dict['vdw_point_density'],
+                                                       input_radii=flags_dict['vdw_radii'])
                 points.append(shell)
 
             points = np.concatenate(points)
@@ -311,19 +312,21 @@ def resp(input_ini) -> list:
                 np.savetxt('grid.dat', points, fmt='%15.10f')
 
         # Calculate ESP values at the grid
-        if flags_dict['esp'] != 'None':
-            data['esp_values'].append(np.loadtxt(flags_dict['esp'][conf_n]))
-            np.savetxt('grid_esp.dat', data['esp_values'][-1], fmt='%15.10f')
-        else:
+        if flags_dict['esp'] == 'None':
+        #     data['esp_values'].append(np.loadtxt(flags_dict['esp'][conf_n]))
+        #     # np.savetxt('grid_esp.dat', data['esp_values'][-1], fmt='%15.10f')
+        # else:
             psi4.core.set_active_molecule(conf)
             psi4.set_options({'basis': flags_dict['basis_esp']})
             psi4.set_options(flags_dict.get('psi4_options', {}))   ### TODO: Figure this out
             psi4.prop(flags_dict['method_esp'], properties=['grid_esp'])
-            data['esp_values'].append(np.loadtxt('grid_esp.dat'))
             psi4.core.clean()
 
-        os.system(f"mv grid.dat {conf_n+1}_{conf.name()}_grid.dat")
-        os.system(f"mv grid_esp.dat {conf_n+1}_{conf.name()}_grid_esp.dat")
+            os.system(f"mv grid.dat {conf_n+1}_{conf.name()}_grid.dat")
+            os.system(f"mv grid_esp.dat {conf_n+1}_{conf.name()}_grid_esp.dat")
+
+        data['esp_values'].append(np.loadtxt(f'{conf_n+1}_{conf.name()}_grid_esp.dat'))
+
 
         # Build a matrix of the inverse distance from each ESP point to each nucleus
         invr = np.zeros((len(points), len(coordinates)))
@@ -338,6 +341,7 @@ def resp(input_ini) -> list:
     # qf, labelf, notes = espfit.fit(options=flags_dict, data=data)
     q_fitted, fitting_methods, notes = espfit.fit(options=flags_dict, data=data)
 
-    write_results(flags_dict=flags_dict, radii=radii, scale_factor=scale_factor, molecules=conf, data=data, notes=notes, fitting_methods=fitting_methods, qf=q_fitted)
+    print('KNKNK:', flags_dict['vdw_radii'], radii)
+    write_results(flags_dict=flags_dict, radii=radii, scale_factor=scale_factor_list, molecules=conf, data=data, notes=notes, fitting_methods=fitting_methods, qf=q_fitted, output_file=output_file)
 
     return q_fitted

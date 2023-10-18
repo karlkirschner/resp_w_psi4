@@ -52,7 +52,10 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
             a : restrained A array
 
         References
-                1. Bayly:93:10271 (Eqs. 10, 13)
+            1. Bayly, C. I.; Cieplak, P.; Cornell, W. & Kollman, P. A. A well-behaved
+                electrostatic potential based method using charge restraints for deriving
+                atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
+                (Eqs. 10, 13)
     """
 
     if not isinstance(q, np.ndarray):
@@ -70,8 +73,7 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
     elif not isinstance(num_conformers, int):
         raise TypeError(f'The num_conformers is not given as a float (i.e., {num_conformers} variable).')
 
-    # hyperbolic Restraint
-    # [Bayly:93:10271] (Eqs. 10, 13)
+    # hyperbolic restraint: reference 1 (Eqs. 10, 13)
 
     A = copy.deepcopy(A_unrestrained)
 
@@ -210,7 +212,10 @@ def fit(options: dict, data: dict):
             notes           : notes on the fitting
 
         References
-            1. Bayly:93:10271 (Eqs. 12-14)
+            1. Bayly, C. I.; Cieplak, P.; Cornell, W. & Kollman, P. A. A well-behaved
+                electrostatic potential based method using charge restraints for deriving
+                atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
+                (Eqs. 12-14)
     """
 
     if not isinstance(options, dict):
@@ -235,7 +240,7 @@ def fit(options: dict, data: dict):
     A = np.zeros((ndim, ndim))
     B = np.zeros(ndim)
 
-    # Bayly:93:10271 (Eqs. 12-14)
+    # Reference [1] (Eqs. 12-14)
     for mol in range(len(data['invr'])):
         r_inverse, V = data['invr'][mol], data['esp_values'][mol]
 
