@@ -79,7 +79,9 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
 
     for i in range(len(symbols)):
         # if an element is not hydrogen or if hydrogens are to be restrained
+        print(ihfree)
         if not ihfree or symbols[i] != 'H':
+            print("***************************", ihfree, symbols[i])
             A[i, i] = A_unrestrained[i, i] + resp_a/np.sqrt(q[i]**2 + resp_b**2) * num_conformers
 
     return A
@@ -174,29 +176,35 @@ def intramolecular_constraints(constraint_charge: list, constraint_groups: list)
             Total charge constraint is added by default for the first molecule.
     """
 
-    if not isinstance(constraint_charge, list):
-        raise TypeError(f'The input options are not a dictionary (i.e., {options} variable).')
+    if not isinstance(constraint_charge, dict):
+        raise TypeError(f'The input options are not a dictionary (i.e., {constraint_charge} variable).')
     elif not isinstance(constraint_groups, list):
-        raise TypeError(f'The input options are not a dictionary (i.e., {data} variable).')
+        raise TypeError(f'The input option is not a list (i.e., {constraint_groups} variable).')
 
     constrained_charges = []
     constrained_indices = []
 
-    for i in constraint_charge:
-        constrained_charges.append(i[0])
-        group = []
-        for k in i[1]:
-            group.append(k)
-        constrained_indices.append(group)
+    print("KNK", constraint_charge)
+    # for i in constraint_charge:
+    #     constrained_charges.append(i[0])
+    #     group = []
+    #     for k in i[1]:
+    #         group.append(k)
+    #     constrained_indices.append(group)
+
+    for key, value in constraint_charge.items():
+        constrained_charges.append(value)
+        constrained_indices.append([key])
 
     for i in constraint_groups:
         for j in range(1, len(i)):
             group = []
-            constrained_charges.append(0)
+            constrained_charges.append(0)  ## Assume the target value for each constraint_groups is 0.0 (TODO)
             group.append(-i[j-1])
             group.append(i[j])
             constrained_indices.append(group)
 
+    # print('TEST', constrained_charges, constrained_indices)
     return constrained_charges, constrained_indices
 
 
@@ -235,7 +243,7 @@ def fit(options: dict, data: dict):
         constraint_indices = []
 
     natoms = data['natoms']
-    ndim = natoms + 1 + len(constraint_charges)
+    ndim = natoms + len(constraint_charges) + 1 
 
     A = np.zeros((ndim, ndim))
     B = np.zeros(ndim)
@@ -244,29 +252,44 @@ def fit(options: dict, data: dict):
     for mol in range(len(data['invr'])):
         r_inverse, V = data['invr'][mol], data['esp_values'][mol]
 
-        # "Teh a_matrix and b_vectors are for one molecule, without the addition of constraints.
-
-        # Construct a_matrix: a_jk = sum_i [(1/r_ij)*(1/r_ik)]
+        # "The a_matrix and b_vector are for one molecule, without the addition of constraints.
+        # Construct a_matrix: a_jk = sum_i [(1/r_ij)*(1/r_ik)] Eq. 12
+        # 1/r^2
         a_matrix = np.einsum("ij, ik -> jk", r_inverse, r_inverse)
 
         # Construct b_vector: b_j = sum_i (V_i/r_ij)
+        # esp/r
         b_vector = np.einsum('i, ij->j', V, r_inverse)
 
-        # Weight the moleule 
+        # Weight the molecule
+        # print('KNK a', options['weight'][mol]**2)
         a_matrix *= options['weight'][mol]**2
         b_vector *= options['weight'][mol]**2
 
-        A[:natoms, :natoms] += a_matrix
+        A[:natoms, :natoms] += a_matrix  # for atoms only, replace their values
         B[:natoms] += b_vector
 
+    # print("KNK weight",options['weight'])
+    # print("KNK A", A)
+    # print("KNK B", B)
+
     # Include total charge constraint
-    A[:natoms, natoms] = 1
+    A[:natoms, natoms] = 1 # insert 1 in column after atoms [row, column]
     A[natoms, :natoms] = 1
     B[natoms] = data['mol_charge']
 
+    # print("KNK A", A)
+    # print("KNK B", B)
+    # print('KNK mol_charge', data['mol_charge'])
+    # print('KNK natoms', natoms)
+    # print('KNK constraint_charges', constraint_charges)
+    # print('KNK constraint_indices', constraint_indices)
+
     # Include constraints to matrices A and B
     for i in range(len(constraint_charges)):
+        # B[natoms + 1 + i] = constraint_charges[i]
         B[natoms + 1 + i] = constraint_charges[i]
+
         for k in constraint_indices[i]:
             if k > 0:
                 A[natoms + 1 + i, k - 1] = 1
@@ -274,6 +297,9 @@ def fit(options: dict, data: dict):
             else:
                 A[natoms + 1 + i, -k - 1] = -1
                 A[-k - 1, natoms + 1 + i] = -1
+
+    # print("KNK A", A)
+    # print("KNK B", B)
 
     fitting_methods.append('esp')
     q = esp_solve(A, B)

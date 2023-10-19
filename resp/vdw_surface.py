@@ -64,7 +64,7 @@ def surface(n_points: int) -> np.ndarray:
 
 
 def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float,
-                density: float, input_radii: dict):
+                density: float, radii: dict):
     """ Computes a molecular surface at points extebded frin the atoms' van der
         Waals radii.
 
@@ -85,10 +85,9 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
                            1.4, 1.6, 1.8, 2.0 [3]
             density      : The (approximate) number of points to generate per Angstrom^2
                            of surface area. 1.0 is recommended [2].
-            input_radii  : user's defined VDW radii
+            radii        : VDW radii
 
         Returns
-            radii (dict) : scaled VDW radii
             surface_points (ndarray) : coordinates of the points on the extended surface
 
         References:
@@ -105,21 +104,12 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
             atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
     """
 
-    radii_orig = {}
     radii_scaled = {}
     surface_points = []
 
     # scale radii
     for element in element_list:
-        # if element in radii.keys():
-        #     continue
-
-        if input_radii == 'None':
-            radii_orig[element] = vdw_radii(element)
-            radii_scaled[element] = vdw_radii(element) * scale_factor
-        else:
-           radii_orig[element] = input_radii[element]
-           radii_scaled[element] = input_radii[element] * scale_factor
+           radii_scaled[element] = radii[element] * scale_factor
 
     # loop over atomic coordinates
     # for element, coordinate in zip(element_list, coordinates): ## TODO, alternative approach - test later.
@@ -151,6 +141,5 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
             if save:
                 surface_points.append(dots[j])
 
-    # print(f'Number of surface points (scaling factor of {scale_factor}: {len(surface_points)}')
-
-    return np.array(surface_points), radii_orig
+    # could also return radii_scaled if desired
+    return np.array(surface_points)
