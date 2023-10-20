@@ -69,19 +69,16 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
     elif not isinstance(ihfree, bool):
         raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree} variable).')
     elif not isinstance(symbols, list):
-        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')  # KNK: was np.ndarray
+        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')
     elif not isinstance(num_conformers, int):
         raise TypeError(f'The num_conformers is not given as a float (i.e., {num_conformers} variable).')
-
-    # hyperbolic restraint: reference 1 (Eqs. 10, 13)
 
     A = copy.deepcopy(A_unrestrained)
 
     for i in range(len(symbols)):
         # if an element is not hydrogen or if hydrogens are to be restrained
-        print(ihfree)
+        # hyperbolic restraint: reference 1 (Eqs. 10, 13)
         if not ihfree or symbols[i] != 'H':
-            print("***************************", ihfree, symbols[i])
             A[i, i] = A_unrestrained[i, i] + resp_a/np.sqrt(q[i]**2 + resp_b**2) * num_conformers
 
     return A
@@ -153,7 +150,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
     return q[:len(symbols)], notes
 
 
-def intramolecular_constraints(constraint_charge: list, constraint_groups: list):
+def intramolecular_constraints(constraint_charge: list, equivalent_groups: list):
     """ Extracts intramolecular constraints from user constraint input
 
         Args
@@ -161,7 +158,7 @@ def intramolecular_constraints(constraint_charge: list, constraint_groups: list)
                 e.g., [[0, [1, 2]], [1, [3, 4]]].
                 The sum of charges on 1 and 2 will equal 0.
                 The sum of charges on 3 and 4 will equal 1.
-            constraint_group : a list of lists of indices of atoms to have equal charge,
+            equivalent_groups : a list of lists of indices of atoms to have equal charge,
                 e.g., [[1, 2], [3, 4]]
                 atoms 1 and 2 will have equal charge
                 atoms 3 and 4 will have equal charge
@@ -178,8 +175,8 @@ def intramolecular_constraints(constraint_charge: list, constraint_groups: list)
 
     if not isinstance(constraint_charge, dict):
         raise TypeError(f'The input options are not a dictionary (i.e., {constraint_charge} variable).')
-    elif not isinstance(constraint_groups, list):
-        raise TypeError(f'The input option is not a list (i.e., {constraint_groups} variable).')
+    elif not isinstance(equivalent_groups, list):
+        raise TypeError(f'The input option is not a list (i.e., {equivalent_groups} variable).')
 
     constrained_charges = []
     constrained_indices = []
@@ -196,10 +193,10 @@ def intramolecular_constraints(constraint_charge: list, constraint_groups: list)
         constrained_charges.append(value)
         constrained_indices.append([key])
 
-    for i in constraint_groups:
+    for i in equivalent_groups:
         for j in range(1, len(i)):
             group = []
-            constrained_charges.append(0)  ## Assume the target value for each constraint_groups is 0.0 (TODO)
+            constrained_charges.append(0)  ## Assume the target value for each equivalent_groups is 0.0 (TODO)
             group.append(-i[j-1])
             group.append(i[j])
             constrained_indices.append(group)
@@ -212,7 +209,7 @@ def fit(options: dict, data: dict):
     """ Performs ESP and RESP fits.
 
         Args
-            options : itting options and internal data
+            options : fitting options and internal data
 
         Returns
             q_fitted (np.ndarray)  : fitted charges
@@ -235,9 +232,9 @@ def fit(options: dict, data: dict):
     fitting_methods = []
     notes = None
 
-    if (options['constraint_charge'] != 'None') and (options['constraint_group'] != 'None'):
+    if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
         constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
-                                                                            constraint_groups=options['constraint_group'])
+                                                                            equivalent_groups=options['equivalent_groups'])
     else:
         constraint_charges = []
         constraint_indices = []
@@ -249,8 +246,8 @@ def fit(options: dict, data: dict):
     B = np.zeros(ndim)
 
     # Reference [1] (Eqs. 12-14)
-    for mol in range(len(data['invr'])):
-        r_inverse, V = data['invr'][mol], data['esp_values'][mol]
+    for mol in range(len(data['inverse_dist'])):
+        r_inverse, V = data['inverse_dist'][mol], data['esp_values'][mol]
 
         # "The a_matrix and b_vector are for one molecule, without the addition of constraints.
         # Construct a_matrix: a_jk = sum_i [(1/r_ij)*(1/r_ik)] Eq. 12
@@ -313,7 +310,7 @@ def fit(options: dict, data: dict):
         fitting_methods.append('resp')
         q, notes = iterate(q=q, A_unrestrained=A, B=B,
                            resp_a=options['resp_a'], resp_b=options['resp_b'], toler=options['toler'],
-                           max_it=options['max_it'], num_conformers=len(data['invr']),
+                           max_it=options['max_it'], num_conformers=len(data['inverse_dist']),
                            ihfree=options['ihfree'], symbols=data['symbols'])
         q_fitted.append(q)
 

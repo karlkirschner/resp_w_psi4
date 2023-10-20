@@ -64,8 +64,8 @@ def surface(n_points: int) -> np.ndarray:
 
 
 def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float,
-                density: float, radii: dict):
-    """ Computes a molecular surface at points extebded frin the atoms' van der
+                density: float, vdw_radii: dict):
+    """ Computes a molecular surface at points extended from the atoms' van der
         Waals radii.
 
         This is done using the Connolly [1] approach. As stated by Besler et al. [2],
@@ -109,7 +109,7 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
 
     # scale radii
     for element in element_list:
-           radii_scaled[element] = radii[element] * scale_factor
+           radii_scaled[element] = vdw_radii[element] * scale_factor
 
     # loop over atomic coordinates
     # for element, coordinate in zip(element_list, coordinates): ## TODO, alternative approach - test later.
