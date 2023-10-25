@@ -97,25 +97,25 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
                 outfile.write(f"    resp_b:  {' ':24s} {flags_dict['resp_b']:.4f}\n")
 
             outfile.write('\nFit\n')
-            print('KNK', data['warnings'])
             if len(data['warnings']) > 0:
                 outfile.write('   WARNINGS\n')
                 for i in data['warnings']:
                     outfile.write(f"{' ':8s}{i}\n")
+                outfile.write("\n")
 
-            outfile.write(f"\n{' ':4s}Electrostatic Potential Charges\n")
-            outfile.write(f"{' ':8s}Center  Symbol{' ':7s}")
+            outfile.write(f"{' ':4s}Electrostatic Potential Charges\n")
+            outfile.write(f"{' ':8s}Center  Symbol{' ':8s}")
             if len(data["fitting_methods"]) > 0:
                 for i in data["fitting_methods"]:
                     outfile.write(f"{i:12s}")
                 outfile.write("\n")
 
             for i in range(len(data['symbols'])):
-                outfile.write(f"{' ':10s}{i + 1}{' ':8s}{data['symbols'][i]}")
+                outfile.write(f"{' ':8s}{i + 1:3d}{' ':8s}{data['symbols'][i]:2s}")
                 outfile.write(f"{' ':4s}{data['fitted_charges'][0][i]:12.8f}{data['fitted_charges'][1][i]:12.8f}")
                 outfile.write("\n")
 
-            outfile.write(f"\n{' ':8s}Total Charge:{' ':3s}")
+            outfile.write(f"\n{' ':8s}Total Charge:{' ':4s}")
             for i in data['fitted_charges']:
                 outfile.write(f"{np.sum(i):12.8f}")
             outfile.write('\n')
@@ -169,11 +169,11 @@ def parse_ini(input_ini: str) -> dict:
 
                 for item in ['esp', 'grid']:
                     if (key == item) and (flags_dict[key] != 'None'):
-                        flags_dict[key] = [str(item.strip("'")) for item in flags_dict[key].replace(' ', '').split(',')]
+                        flags_dict[key] = [str(item.strip("'")) for item in flags_dict[key].replace(' ', '').replace('\n', '').split(',')]
 
                 for item in ['vdw_scale_factors', 'weight']:
                     if (key == item) and (flags_dict[key] != 'None'):
-                        flags_dict[key] = [float(item.strip("'")) for item in flags_dict[key].replace(' ', '').split(',')]
+                        flags_dict[key] = [float(item.strip("'")) for item in flags_dict[key].replace(' ', '').replace('\n', '').split(',')]
 
                 for item in ['vdw_radii']:
                     if (key == item) and (flags_dict[key] != 'None'):
@@ -296,7 +296,6 @@ def resp(input_ini) -> list:
 
             data['vdw_radii'] = vdw_radii
 
-            print("UNITS", conf.units())
             points = []  # units: Bohr
             if flags_dict['grid'] != 'None':
                 points = np.loadtxt(flags_dict['grid'][conf_n])
@@ -344,8 +343,6 @@ def resp(input_ini) -> list:
             data['inverse_dist'].append(inverse_dist * bohr_to_angstrom)  # convert to atomic units
             data['coordinates'][conf_n] /= bohr_to_angstrom  # convert to angstroms
 
-        print('KNK', len(data['esp_values']), len(points))
-        print('POINTS', points)
         # Calculate charges
         data = espfit.fit(options=flags_dict, data=data)
 

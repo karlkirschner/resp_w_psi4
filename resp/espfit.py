@@ -247,7 +247,7 @@ def fit(options: dict, data: dict):
     else:
         q_fitted = []
         fitting_methods = []
-        print('KNK: ', options['constraint_charge'], options['equivalent_groups'])
+        # print('KNK: ', options['constraint_charge'], options['equivalent_groups'])
         if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
             constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
                                                                                 equivalent_groups=options['equivalent_groups'])
@@ -298,8 +298,8 @@ def fit(options: dict, data: dict):
         # print("KNK B", B)
         # print('KNK mol_charge', data['mol_charge'])
         # print('KNK natoms', natoms)
-        print('KNK constraint_charges', constraint_charges)
-        print('KNK constraint_indices', constraint_indices)
+        # print('KNK constraint_charges', constraint_charges)
+        # print('KNK constraint_indices', constraint_indices)
 
         # Include constraints to matrices A and B
         for i in range(len(constraint_charges)):
