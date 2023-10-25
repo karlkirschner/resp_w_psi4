@@ -164,7 +164,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
         return q[:len(symbols)], warning_notes
 
 
-def intramolecular_constraints(constraint_charge: dict, equivalent_groups: list):
+def intramolecular_constraints(constraint_charge: (dict, bool), equivalent_groups: (list, bool)):
     """ Extracts intramolecular constraints from user constraint input
 
         Args
@@ -187,10 +187,10 @@ def intramolecular_constraints(constraint_charge: dict, equivalent_groups: list)
             Total charge constraint is added by default for the first molecule.
     """
 
-    if not isinstance(constraint_charge, dict):
-        raise TypeError(f'The input options are not a dictionary (i.e., {constraint_charge} variable).')
-    elif not isinstance(equivalent_groups, list):
-        raise TypeError(f'The input option is not a list (i.e., {equivalent_groups} variable).')
+    if not isinstance(constraint_charge, (dict, bool)):
+        raise TypeError(f'The input options are not a dictionary or boolean (i.e., {constraint_charge} variable).')
+    elif not isinstance(equivalent_groups, (list, bool)):
+        raise TypeError(f'The input option is not a list or boolean (i.e., {equivalent_groups} variable).')
     else:
         constrained_charges = []
         constrained_indices = []
@@ -202,17 +202,18 @@ def intramolecular_constraints(constraint_charge: dict, equivalent_groups: list)
         #         group.append(k)
         #     constrained_indices.append(group)
 
-        for key, value in constraint_charge.items():
-            constrained_charges.append(value)
-            constrained_indices.append([key])
-
-        for i in equivalent_groups:
-            for j in range(1, len(i)):
-                group = []
-                constrained_charges.append(0)  # TODO: Assume the target value for each equivalent_groups is 0.0
-                group.append(-i[j-1])
-                group.append(i[j])
-                constrained_indices.append(group)
+        if constraint_charge:
+            for key, value in constraint_charge.items():
+                constrained_charges.append(value)
+                constrained_indices.append([key])
+        if equivalent_groups:
+            for i in equivalent_groups:
+                for j in range(1, len(i)):
+                    group = []
+                    constrained_charges.append(0)  # TODO: Why 0 - the target value for each equivalent_groups is 0.0?
+                    group.append(-i[j-1])
+                    group.append(i[j])
+                    constrained_indices.append(group)
 
         # print('TEST', constrained_charges, constrained_indices)
         return constrained_charges, constrained_indices
@@ -246,10 +247,16 @@ def fit(options: dict, data: dict):
     else:
         q_fitted = []
         fitting_methods = []
-
+        print('KNK: ', options['constraint_charge'], options['equivalent_groups'])
         if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
             constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
                                                                                 equivalent_groups=options['equivalent_groups'])
+        elif (options['constraint_charge'] == 'None') and (options['equivalent_groups'] != 'None'):
+            constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=False,
+                                                                                equivalent_groups=options['equivalent_groups'])
+        elif (options['constraint_charge'] != 'None') and (options['equivalent_groups'] == 'None'):
+            constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
+                                                                                equivalent_groups=False)
         else:
             constraint_charges = []
             constraint_indices = []
