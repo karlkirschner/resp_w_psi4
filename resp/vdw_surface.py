@@ -1,25 +1,34 @@
 """
-A sript to generate van der Waals surface of molecules.
+A srcipt to generate van der Waals surface of molecules.
 """
 
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
 
+
 def vdw_radii(element: str) -> float:
-    # van der Waals radii (in Angstrom), taken from GAMESS.
+    """ Assign the van der Waals radius to an element.
+          The values were taken from GAMESS.
+        Args
+            element : one or two letter element identifier
+        Returns
+            van der Waals radius (Angstrom)
+    """
 
-
-    vdw_radii = {'H':  1.20, 'HE': 1.20,
+    if not isinstance(element, str):
+        raise TypeError(f'The element was not given as a string (i.e., {element} variable).')
+    else:
+        radii = {'H':  1.20, 'HE': 1.20,
                  'LI': 1.37, 'BE': 1.45, 'B':  1.45, 'C':  1.50,
                  'N':  1.50, 'O':  1.40, 'F':  1.35, 'NE': 1.30,
                  'NA': 1.57, 'MG': 1.36, 'AL': 1.24, 'SI': 1.17,
                  'P':  1.80, 'S':  1.75, 'CL': 1.70}
 
-    if element in vdw_radii.keys():
-        return vdw_radii[element]
-    else:
-        raise KeyError(f'{element} is not internally supported; use the "vdw_radii" option to add its vdw radius.')
+        if element in radii.keys():
+            return radii[element]
+        else:
+            raise KeyError(f'{element} is not internally supported; use the "vdw_radii" option to add its vdw radius.')
 
 
 def surface(n_points: int) -> np.ndarray:
@@ -32,39 +41,46 @@ def surface(n_points: int) -> np.ndarray:
 
         Returns
             xyz coordinates of surface points
+
+        Library dependencies
+            numpy
     """
 
-    surface_points = []
-    eps = 1e-10
-    nequat = int(np.sqrt(np.pi * n_points))
-    nvert = int(nequat/2)
-    nu = 0
+    if not isinstance(n_points, int):
+        raise TypeError(f'The number of points was not given as an integer (i.e., {n_points} variable).')
+    else:
+        surface_points = []
+        eps = 1e-10
 
-    for i in range(nvert + 1):
-        fi = np.pi * i/nvert
-        z = np.cos(fi)
-        xy = np.sin(fi)
-        nhor = int(nequat * xy + eps)
+        nequat = int(np.sqrt(np.pi * n_points))
+        nvert = int(nequat / 2)
+        nu = 0
 
-        if nhor < 1:
-            nhor = 1
+        for i in range(nvert + 1):
+            fi = np.pi * i / nvert
+            z = np.cos(fi)
+            xy = np.sin(fi)
+            nhor = int(nequat * xy + eps)
 
-        for j in range(nhor):
-            fj = 2 * np.pi * j/nhor
-            x = np.cos(fj) * xy
-            y = np.sin(fj) * xy
+            if nhor < 1:
+                nhor = 1
 
-            if nu >= n_points:
-                return np.array(surface_points)
+            for j in range(nhor):
+                fj = 2 * np.pi * j / nhor
+                x = np.cos(fj) * xy
+                y = np.sin(fj) * xy
 
-            nu += 1
-            surface_points.append([x, y, z])
-    
-    return np.array(surface_points)
+                if nu >= n_points:
+                    return np.array(surface_points)
+
+                nu += 1
+                surface_points.append([x, y, z])
+
+        return np.array(surface_points)
 
 
 def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float,
-                density: float, vdw_radii: dict):
+                density: float, radii: dict) -> np.ndarray:
     """ Computes a molecular surface at points extended from the atoms' van der
         Waals radii.
 
@@ -90,6 +106,9 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
         Returns
             surface_points (ndarray) : coordinates of the points on the extended surface
 
+        Library dependencies
+            numpy
+
         References:
         1. Connolly, M. L. Analytical Molecular-surface Calculation Journal of Applied
             Crystallography, 1983, 16, 548-558
@@ -104,42 +123,52 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
             atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
     """
 
-    radii_scaled = {}
-    surface_points = []
+    if not isinstance(coordinates, np.ndarray):
+        raise TypeError(f'The coordinate were not given as an ndarray (i.e., {coordinates} variable).')
+    elif not isinstance(element_list, list):
+        raise TypeError(f'The elements were not given as a list (i.e., {element_list} variable).')
+    elif not isinstance(scale_factor, float):
+        raise TypeError(f'The scale_factor was not given as a float (i.e., {scale_factor} variable).')
+    elif not isinstance(density, float):
+        raise TypeError(f'The density was not given as a float (i.e., {density} variable).')
+    elif not isinstance(radii, dict):
+        raise TypeError(f'The radii were not given as a dictionary (i.e., {radii} variable).')
+    else:
+        radii_scaled = {}
+        surface_points = []
 
-    # scale radii
-    for element in element_list:
-           radii_scaled[element] = vdw_radii[element] * scale_factor
+        # scale radii
+        for element in element_list:
+            radii_scaled[element] = radii[element] * scale_factor
 
-    # loop over atomic coordinates
-    # for element, coordinate in zip(element_list, coordinates): ## TODO, alternative approach - test later.
-    #     print('knk 2', element, coordinate)
-    for i in range(len(coordinates)):
+        # loop over atomic coordinates
+        # for element, coordinate in zip(element_list, coordinates): # TODO, alternative approach - test later.
+        for i in range(len(coordinates)):
 
-        # calculate approximate number of ESP grid points
-        n_points = int(density * 4.0 * np.pi * np.power(radii_scaled[element_list[i]], 2))  # KNK: why 4.0?
+            # calculate approximate number of ESP grid points
+            n_points = int(density * 4.0 * np.pi * np.power(radii_scaled[element_list[i]], 2))  # why 4.0?
 
-        # generate an array of n_points in a unit sphere around the atom
-        dots = surface(n_points=n_points)
+            # generate an array of n_points in a unit sphere around the atom
+            dots = surface(n_points=n_points)
 
-        # scale the unit sphere by the VDW radius and translate
-        dots = coordinates[i] + radii_scaled[element_list[i]] * dots
+            # scale the unit sphere by the VDW radius and translate
+            dots = coordinates[i] + radii_scaled[element_list[i]] * dots
 
-        # determine which points should be included or removed due to overlaps
-        for j in range(len(dots)):
-            save = True
-            for k in range(len(coordinates)):
-                if i == k:
-                    continue
+            # determine which points should be included or removed due to overlaps
+            for j in range(len(dots)):
+                save = True
+                for k in range(len(coordinates)):
+                    if i == k:
+                        continue
 
-                # exclude points within the scaled VDW radius of other atoms
-                d = np.linalg.norm(dots[j] - coordinates[k])
+                    # exclude points within the scaled VDW radius of other atoms
+                    d = np.linalg.norm(dots[j] - coordinates[k])
 
-                if d < radii_scaled[element_list[k]]:
-                    save = False
-                    break
-            if save:
-                surface_points.append(dots[j])
+                    if d < radii_scaled[element_list[k]]:
+                        save = False
+                        break
+                if save:
+                    surface_points.append(dots[j])
 
-    # could also return radii_scaled if desired
-    return np.array(surface_points)
+        # could also return radii_scaled if desired
+        return np.array(surface_points)

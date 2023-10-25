@@ -8,12 +8,11 @@ Equations taken from [Bayly:93:10269].
 from __future__ import division, absolute_import, print_function
 
 import copy
-import warnings
 
 import numpy as np
 
 
-def esp_solve(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+def esp_solve(A: np.ndarray, B: np.ndarray, warning_notes: list) -> np.ndarray:
     """ Solves for point charges: A*q = B.
 
         Args
@@ -22,15 +21,19 @@ def esp_solve(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
         Returns
             q : charges
+
+        Library dependencies
+            numpy
+            warnings
     """
 
     q = np.linalg.solve(A, B)
 
     # Warning for near singular matrix, in case np.linalg.solve doesn't detect a singularity
     if np.linalg.cond(A) > 1/np.finfo(A.dtype).eps:
-        warnings.warn("Possible fit problem in esp_solve function; singular matrix")
+        warning_notes.append("Warning: Possible fit problem in esp_solve function; singular matrix.")
 
-    return q
+    return q, warning_notes
 
 
 def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
@@ -40,16 +43,20 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
     """ Add a hyperbolic restraint to matrix A.
 
         Args
-            q : charges
+            q              : charges
             A_unrestrained : unrestrained A matrix
-            resp_a : restraint scale a
-            resp_b : restraint parabola tightness b
-            ihfree : if hydrogens are excluded or included in restraint
-            symbols : element symbols
+            resp_a         : restraint scale a
+            resp_b         : restraint parabola tightness b
+            ihfree         : if hydrogens are excluded or included in restraint
+            symbols        : element symbols
             num_conformers : the number of conformers
 
         Returns
             a : restrained A array
+
+        Library dependencies
+            copy
+            numpy
 
         References
             1. Bayly, C. I.; Cieplak, P.; Cornell, W. & Kollman, P. A. A well-behaved
@@ -72,22 +79,23 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
         raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')
     elif not isinstance(num_conformers, int):
         raise TypeError(f'The num_conformers is not given as a float (i.e., {num_conformers} variable).')
+    else:
+        A = copy.deepcopy(A_unrestrained)
 
-    A = copy.deepcopy(A_unrestrained)
+        for i in range(len(symbols)):
+            # if an element is not hydrogen or if hydrogens are to be restrained
+            # hyperbolic restraint: reference 1 (Eqs. 10, 13)
+            if not ihfree or symbols[i] != 'H':
+                A[i, i] = A_unrestrained[i, i] + resp_a/np.sqrt(q[i]**2 + resp_b**2) * num_conformers
 
-    for i in range(len(symbols)):
-        # if an element is not hydrogen or if hydrogens are to be restrained
-        # hyperbolic restraint: reference 1 (Eqs. 10, 13)
-        if not ihfree or symbols[i] != 'H':
-            A[i, i] = A_unrestrained[i, i] + resp_a/np.sqrt(q[i]**2 + resp_b**2) * num_conformers
-
-    return A
+        return A
 
 
 def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
             resp_a: float, resp_b: float, toler: float,
             max_it: int, num_conformers: int,
-            ihfree: bool, symbols: list) -> np.ndarray:
+            ihfree: bool, symbols: list,
+            warning_notes: list) -> np.ndarray:
     """ Iterates the RESP fitting procedure.
 
         Args:
@@ -101,9 +109,14 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
             num_conformers : number of conformers
             ihfree         : if hydrogens are excluded or included in restraint
             symbols        : element symbols
+            warning_notes  : warnings that are generated
 
         Returns
-            q              : fitted charges
+            q : fitted charges
+
+        Library dependencies
+            copy
+            numpy
     """
 
     if not isinstance(q, np.ndarray):
@@ -119,38 +132,39 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
     elif not isinstance(ihfree, bool):
         raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree} variable).')
     elif not isinstance(symbols, list):
-        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')  # KNK: was np.ndarray
+        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')  #  was np.ndarray
     elif not isinstance(toler, float):
         raise TypeError(f'The toler is not given as a float (i.e., {toler} variable).')
     elif not isinstance(max_it, int):
         raise TypeError(f'The max_it is not given as a float (i.e., {max_it} variable).')
     elif not isinstance(num_conformers, int):
         raise TypeError(f'The num_conformers is not given as a float (i.e., {num_conformers} variable).')
-
-    q_last = copy.deepcopy(q)
-
-    n_it = 0 # curent number of interation
-    difference = 2*toler
-    notes = None
-
-    while (difference > toler) and (n_it < max_it):
-        n_it += 1
-        A = restraint(q=q, A_unrestrained=A_unrestrained,
-                      resp_a=resp_a, resp_b=resp_b, num_conformers=num_conformers, ihfree=ihfree, symbols=symbols)
-
-        q = esp_solve(A, B)
-
-        # Extract vector elements that correspond to charges
-        difference = np.sqrt(np.max((q[:len(symbols)] - q_last[:len(symbols)])**2))
+    elif not isinstance(warning_notes, list):
+        raise TypeError(f'The warning_notes is not given as a float (i.e., {warning_notes} variable).')
+    else:
         q_last = copy.deepcopy(q)
 
-    if difference > toler:
-        notes += (f"\nCharge fitting did not converge; try increasing the maximum iteration number to > {max_it}.")
+        n_it = 0  # current number of interation
+        difference = 2*toler
 
-    return q[:len(symbols)], notes
+        while (difference > toler) and (n_it < max_it):
+            n_it += 1
+            A = restraint(q=q, A_unrestrained=A_unrestrained,
+                          resp_a=resp_a, resp_b=resp_b, num_conformers=num_conformers, ihfree=ihfree, symbols=symbols)
+
+            q, warning_notes = esp_solve(A=A, B=B, warning_notes=warning_notes)
+
+            # Extract vector elements that correspond to charges
+            difference = np.sqrt(np.max((q[:len(symbols)] - q_last[:len(symbols)])**2))
+            q_last = copy.deepcopy(q)
+
+        if difference > toler:
+            warning_notes.append(f"Warning: Charge fitting unconverged; try increasing max iteration number to >{max_it}.")
+
+        return q[:len(symbols)], warning_notes
 
 
-def intramolecular_constraints(constraint_charge: list, equivalent_groups: list):
+def intramolecular_constraints(constraint_charge: dict, equivalent_groups: list):
     """ Extracts intramolecular constraints from user constraint input
 
         Args
@@ -177,32 +191,31 @@ def intramolecular_constraints(constraint_charge: list, equivalent_groups: list)
         raise TypeError(f'The input options are not a dictionary (i.e., {constraint_charge} variable).')
     elif not isinstance(equivalent_groups, list):
         raise TypeError(f'The input option is not a list (i.e., {equivalent_groups} variable).')
+    else:
+        constrained_charges = []
+        constrained_indices = []
 
-    constrained_charges = []
-    constrained_indices = []
+        # for i in constraint_charge:
+        #     constrained_charges.append(i[0])
+        #     group = []
+        #     for k in i[1]:
+        #         group.append(k)
+        #     constrained_indices.append(group)
 
-    print("KNK", constraint_charge)
-    # for i in constraint_charge:
-    #     constrained_charges.append(i[0])
-    #     group = []
-    #     for k in i[1]:
-    #         group.append(k)
-    #     constrained_indices.append(group)
+        for key, value in constraint_charge.items():
+            constrained_charges.append(value)
+            constrained_indices.append([key])
 
-    for key, value in constraint_charge.items():
-        constrained_charges.append(value)
-        constrained_indices.append([key])
+        for i in equivalent_groups:
+            for j in range(1, len(i)):
+                group = []
+                constrained_charges.append(0)  # TODO: Assume the target value for each equivalent_groups is 0.0
+                group.append(-i[j-1])
+                group.append(i[j])
+                constrained_indices.append(group)
 
-    for i in equivalent_groups:
-        for j in range(1, len(i)):
-            group = []
-            constrained_charges.append(0)  ## Assume the target value for each equivalent_groups is 0.0 (TODO)
-            group.append(-i[j-1])
-            group.append(i[j])
-            constrained_indices.append(group)
-
-    # print('TEST', constrained_charges, constrained_indices)
-    return constrained_charges, constrained_indices
+        # print('TEST', constrained_charges, constrained_indices)
+        return constrained_charges, constrained_indices
 
 
 def fit(options: dict, data: dict):
@@ -214,7 +227,10 @@ def fit(options: dict, data: dict):
         Returns
             q_fitted (np.ndarray)  : fitted charges
             fitting_methods (list) : strings of fitting methods (i.e., ESP and RESP)
-            notes           : notes on the fitting
+            warning_notes          : warnings concerning the fitting
+
+        Library dependencies
+            numpy
 
         References
             1. Bayly, C. I.; Cieplak, P.; Cornell, W. & Kollman, P. A. A well-behaved
@@ -227,91 +243,86 @@ def fit(options: dict, data: dict):
         raise TypeError(f'The input options are not a dictionary (i.e., {options} variable).')
     elif not isinstance(data, dict):
         raise TypeError(f'The input options are not a dictionary (i.e., {data} variable).')
-
-    q_fitted = []
-    fitting_methods = []
-    notes = None
-
-    if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
-        constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
-                                                                            equivalent_groups=options['equivalent_groups'])
     else:
-        constraint_charges = []
-        constraint_indices = []
+        q_fitted = []
+        fitting_methods = []
 
-    natoms = data['natoms']
-    ndim = natoms + len(constraint_charges) + 1 
+        if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
+            constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
+                                                                                equivalent_groups=options['equivalent_groups'])
+        else:
+            constraint_charges = []
+            constraint_indices = []
 
-    A = np.zeros((ndim, ndim))
-    B = np.zeros(ndim)
+        natoms = data['natoms']
+        ndim = natoms + len(constraint_charges) + 1
 
-    # Reference [1] (Eqs. 12-14)
-    for mol in range(len(data['inverse_dist'])):
-        r_inverse, V = data['inverse_dist'][mol], data['esp_values'][mol]
+        A = np.zeros((ndim, ndim))
+        B = np.zeros(ndim)
 
-        # "The a_matrix and b_vector are for one molecule, without the addition of constraints.
-        # Construct a_matrix: a_jk = sum_i [(1/r_ij)*(1/r_ik)] Eq. 12
-        # 1/r^2
-        a_matrix = np.einsum("ij, ik -> jk", r_inverse, r_inverse)
+        # Reference [1] (Eqs. 12-14)
+        for mol in range(len(data['inverse_dist'])):
+            r_inverse, V = data['inverse_dist'][mol], data['esp_values'][mol]
 
-        # Construct b_vector: b_j = sum_i (V_i/r_ij)
-        # esp/r
-        b_vector = np.einsum('i, ij->j', V, r_inverse)
+            # The a_matrix and b_vector are for one molecule, without the addition of constraints.
+            # Construct a_matrix: a_jk = sum_i [(1/r_ij)*(1/r_ik)] Eq. 12 -> i.e., 1/r^2
+            a_matrix = np.einsum("ij, ik -> jk", r_inverse, r_inverse)
 
-        # Weight the molecule
-        # print('KNK a', options['weight'][mol]**2)
-        a_matrix *= options['weight'][mol]**2
-        b_vector *= options['weight'][mol]**2
+            # Construct b_vector: b_j = sum_i (V_i/r_ij) -> i.e., esp/r
+            b_vector = np.einsum('i, ij->j', V, r_inverse)
 
-        A[:natoms, :natoms] += a_matrix  # for atoms only, replace their values
-        B[:natoms] += b_vector
+            # Weight the molecule
+            a_matrix *= options['weight'][mol]**2
+            b_vector *= options['weight'][mol]**2
 
-    # print("KNK weight",options['weight'])
-    # print("KNK A", A)
-    # print("KNK B", B)
+            A[:natoms, :natoms] += a_matrix  # for atoms only, replace their values
+            B[:natoms] += b_vector
 
-    # Include total charge constraint
-    A[:natoms, natoms] = 1 # insert 1 in column after atoms [row, column]
-    A[natoms, :natoms] = 1
-    B[natoms] = data['mol_charge']
+        # print("KNK weight",options['weight'])
+        # print("KNK A", A)
+        # print("KNK B", B)
 
-    # print("KNK A", A)
-    # print("KNK B", B)
-    # print('KNK mol_charge', data['mol_charge'])
-    # print('KNK natoms', natoms)
-    # print('KNK constraint_charges', constraint_charges)
-    # print('KNK constraint_indices', constraint_indices)
+        # Include total charge constraint
+        A[:natoms, natoms] = 1  # insert 1 in column after atoms [row, column]
+        A[natoms, :natoms] = 1
+        B[natoms] = data['mol_charge']
 
-    # Include constraints to matrices A and B
-    for i in range(len(constraint_charges)):
-        # B[natoms + 1 + i] = constraint_charges[i]
-        B[natoms + 1 + i] = constraint_charges[i]
+        # print("KNK A", A)
+        # print("KNK B", B)
+        # print('KNK mol_charge', data['mol_charge'])
+        # print('KNK natoms', natoms)
+        print('KNK constraint_charges', constraint_charges)
+        print('KNK constraint_indices', constraint_indices)
 
-        for k in constraint_indices[i]:
-            if k > 0:
-                A[natoms + 1 + i, k - 1] = 1
-                A[k - 1, natoms + 1 + i] = 1
-            else:
-                A[natoms + 1 + i, -k - 1] = -1
-                A[-k - 1, natoms + 1 + i] = -1
+        # Include constraints to matrices A and B
+        for i in range(len(constraint_charges)):
+            B[natoms + 1 + i] = constraint_charges[i]
 
-    # print("KNK A", A)
-    # print("KNK B", B)
+            for k in constraint_indices[i]:
+                if k > 0:
+                    A[natoms + 1 + i, k - 1] = 1
+                    A[k - 1, natoms + 1 + i] = 1
+                else:
+                    A[natoms + 1 + i, -k - 1] = -1
+                    A[-k - 1, natoms + 1 + i] = -1
 
-    fitting_methods.append('esp')
-    q = esp_solve(A, B)
+        # ESP
+        fitting_methods.append('esp')
+        q, warning_notes = esp_solve(A=A, B=B, warning_notes=data['warnings'])
+        q_fitted.append(q[:natoms])
 
-    q_fitted.append(q[:natoms])
-
-    if not options['restraint']:
-        return q_fitted, fitting_methods, notes
-    else:
         # RESP
-        fitting_methods.append('resp')
-        q, notes = iterate(q=q, A_unrestrained=A, B=B,
-                           resp_a=options['resp_a'], resp_b=options['resp_b'], toler=options['toler'],
-                           max_it=options['max_it'], num_conformers=len(data['inverse_dist']),
-                           ihfree=options['ihfree'], symbols=data['symbols'])
-        q_fitted.append(q)
+        if options['restraint']:
+            fitting_methods.append('resp')
+            q, warning_notes = iterate(q=q, A_unrestrained=A, B=B,
+                                       resp_a=options['resp_a'], resp_b=options['resp_b'], toler=options['toler'],
+                                       max_it=options['max_it'], num_conformers=len(data['inverse_dist']),
+                                       ihfree=options['ihfree'], symbols=data['symbols'],
+                                       warning_notes=data['warnings'])
+            q_fitted.append(q)
 
-        return q_fitted, fitting_methods, notes
+        data['fitted_charges'] = q_fitted
+        data['fitting_methods'] = fitting_methods
+        data['warnings'] = warning_notes
+
+        return data
