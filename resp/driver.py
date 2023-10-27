@@ -44,42 +44,39 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
     elif not isinstance(data, dict):
         raise TypeError(f'The resulting data were not given as a dictionary (i.e., {data}).')
     else:
-        with open(output_file, "w") as outfile:
+        with open(output_file, 'w') as outfile:
             outfile.write("Electrostatic potential parameters\n")
 
-            outfile.write("    van der Waals radii (Angstrom):\n")
+            outfile.write(f"{' ':4s}van der Waals radii (Angstrom):\n")
             for element, radius in data['vdw_radii'].items():
                 outfile.write(f"{' ':38s}{element} = {radius:.3f}\n")
 
-            outfile.write(f"    VDW scale factors: {' ':14s} ")
-            for i in flags_dict["vdw_scale_factors"]:
-                outfile.write(f"{i} ")
-
-            outfile.write(f"\n    VDW point density: {' ':14s} {flags_dict['vdw_point_density']:.3f}\n")
+            outfile.write(f"{' ':4s}VDW scale factors: {' ':14s} {flags_dict['vdw_scale_factors']}\n")
+            outfile.write(f"{' ':4s}VDW point density: {' ':14s} {flags_dict['vdw_point_density']}\n")
 
             if flags_dict['esp'] == 'None':
-                outfile.write(f"    ESP method: {' ':21s} {flags_dict['method_esp']}\n")
-                outfile.write(f"    ESP basis set: {' ':18s} {flags_dict['basis_esp']}\n")
+                outfile.write(f"{' ':4s}ESP method: {' ':21s} {flags_dict['method_esp']}\n")
+                outfile.write(f"{' ':4s}ESP basis set: {' ':18s} {flags_dict['basis_esp']}\n")
 
             outfile.write(f'\nGrid information\n')
-            outfile.write(f'    Quantum ESP File(s)\n')
+            outfile.write(f"{' ':4s}Quantum ESP File(s):\n")
             for conf_n in range(len(flags_dict['input_files'])):
                 outfile.write(f"{' ':38s}{data['name'][conf_n]}_grid_esp.dat\n")
 
-            outfile.write(f'    Grid Points File(s) (# of points)\n')
+            outfile.write(f"\n{' ':4s}Grid Points File(s) (# of points):\n")
             for conf_n in range(len(flags_dict['input_files'])):
                 outfile.write(f"{' ':38s}{data['name'][conf_n]}_grid.dat ({len(data['esp_values'][conf_n])})\n")
 
             outfile.write('\nConstraints\n')
             if flags_dict['constraint_charge'] != 'None':
-                outfile.write('    Charge constraints\n')
+                outfile.write(f"{' ':4s}Charge constraints:\n")
                 for key, value in flags_dict['constraint_charge'].items():
                     outfile.write(f"{' ':37s} Atom {key} = {value}\n")
             else:
-                outfile.write(f"{' ':38s}None\n")
+                outfile.write(f"{' ':4s}Charge constraints: {flags_dict['constraint_charge']}\n")
 
             if flags_dict['equivalent_groups'] != 'None':
-                outfile.write('    Equivalent charges on atoms\n')
+                outfile.write(f"\n{' ':4s}Equivalent charges on atoms (group = atom numbers):\n")
                 count = 1
                 for i in flags_dict['equivalent_groups']:
                     outfile.write(f"{' ':37s} group_{count} = ")
@@ -87,37 +84,35 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
                         outfile.write(f'{j} ')
                     count += 1
                     outfile.write('\n')
+            else:
+                outfile.write(f"\n{' ':4s}Equivalent charges on atoms: {flags_dict['equivalent_groups']}\n")
 
             outfile.write('\nRestraint\n')
-            if flags_dict['restraint']:
-                outfile.write('    Hyperbolic restraint to a charge of zero\n')
-                if flags_dict['ihfree']:
-                    outfile.write('    Hydrogen atoms are not restrained\n')
-                outfile.write(f"    resp_a:  {' ':23s}  {flags_dict['resp_a']:.4f}\n")
-                outfile.write(f"    resp_b:  {' ':24s} {flags_dict['resp_b']:.4f}\n")
+            outfile.write(f"{' ':4s}ihfree:{' ':27s}{flags_dict['ihfree']:}\n")
+            outfile.write(f"{' ':4s}resp_a:{' ':27s}{flags_dict['resp_a']:.4f}\n")
+            outfile.write(f"{' ':4s}resp_b:{' ':27s}{flags_dict['resp_b']:.4f}\n")
 
             outfile.write('\nFit\n')
             if len(data['warnings']) > 0:
-                outfile.write('   WARNINGS\n')
+                outfile.write(f"{' ':4s}WARNINGS:\n")
                 for i in data['warnings']:
                     outfile.write(f"{' ':8s}{i}\n")
                 outfile.write("\n")
 
-            outfile.write(f"{' ':4s}Electrostatic Potential Charges\n")
+            outfile.write(f"{' ':4s}Electrostatic Potential Charges:\n")
             outfile.write(f"{' ':8s}Center  Symbol{' ':8s}")
-            if len(data["fitting_methods"]) > 0:
-                for i in data["fitting_methods"]:
-                    outfile.write(f"{i:12s}")
-                outfile.write("\n")
+            if len(data['fitting_methods']) > 0:
+                for i in data['fitting_methods']:
+                    outfile.write(f'{i:12s}')
+                outfile.write('\n')
 
             for i in range(len(data['symbols'])):
                 outfile.write(f"{' ':8s}{i + 1:3d}{' ':8s}{data['symbols'][i]:2s}")
-                outfile.write(f"{' ':4s}{data['fitted_charges'][0][i]:12.8f}{data['fitted_charges'][1][i]:12.8f}")
-                outfile.write("\n")
+                outfile.write(f"{' ':4s}{data['fitted_charges'][0][i]:12.8f}{data['fitted_charges'][1][i]:12.8f}\n")
 
             outfile.write(f"\n{' ':8s}Total Charge:{' ':4s}")
             for i in data['fitted_charges']:
-                outfile.write(f"{np.sum(i):12.8f}")
+                outfile.write(f'{np.sum(i):12.8f}')
             outfile.write('\n')
 
 
@@ -184,6 +179,9 @@ def parse_ini(input_ini: str) -> dict:
                 for item in ['vdw_point_density', 'resp_a', 'resp_b', 'toler']:
                     if (key == item) and (flags_dict[key] != 'None'):
                         flags_dict[key] = float(flags_dict[key])
+                    # else:
+                    #     print(flags_dict[key])
+                    #     flags_dict[key] = str(flags_dict[key])
 
                 for item in ['max_it']:
                     if (key == item) and (flags_dict[key] != 'None'):
@@ -270,7 +268,8 @@ def resp(input_ini) -> list:
         flags_dict = parse_ini(input_ini)
         output_file = input_ini.replace('ini', 'out')
 
-        print('\nYour flags:', flags_dict)
+        # print('\nYour flags:', flags_dict)
+        print('\nDetermining Partial Atomic Charges\n')
 
         data = {}
         data['coordinates'] = []
@@ -323,9 +322,11 @@ def resp(input_ini) -> list:
 
             # Calculate ESP values along the grid points
             if flags_dict['esp'] == 'None':
+                psi4.set_output_file(f'{file_basename}-psi.log')
                 psi4.core.set_active_molecule(conf)
-                psi4.set_options({'basis': flags_dict['basis_esp']})
-                psi4.set_options(flags_dict.get('psi4_options', {}))  # TODO: investigate more
+                # psi4.set_options({'basis': flags_dict['basis_esp']})  # fine for 1 basis set
+                psi4.basis_helper(f"{flags_dict['basis_esp']}")  # good for 1 or a mix of basis sets
+                psi4.set_options(flags_dict.get('psi4_options', {}))
                 psi4.prop(flags_dict['method_esp'], properties=['grid_esp'])
                 psi4.core.clean()
 
@@ -345,7 +346,6 @@ def resp(input_ini) -> list:
 
         # Calculate charges
         data = espfit.fit(options=flags_dict, data=data)
-
         write_results(flags_dict=flags_dict, data=data, output_file=output_file)
 
         return data['fitted_charges']
