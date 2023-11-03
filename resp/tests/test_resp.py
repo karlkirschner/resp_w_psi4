@@ -96,8 +96,8 @@ def test_resp_constrained_a():
     print(f'{charges[1]-reference_charges}\n')
 
     assert np.allclose(charges[1], reference_charges, atol=5e-4)
-
-
+#
+#
 def test_resp_two_conformers_a():
     ''' One-stage fitting of charges using two conformations.
 

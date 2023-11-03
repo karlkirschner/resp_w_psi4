@@ -51,27 +51,40 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
             for element, radius in data['vdw_radii'].items():
                 outfile.write(f"{' ':38s}{element} = {radius:.3f}\n")
 
-            outfile.write(f"{' ':4s}VDW scale factors: {' ':14s} {flags_dict['vdw_scale_factors']}\n")
-            outfile.write(f"{' ':4s}VDW point density: {' ':14s} {flags_dict['vdw_point_density']}\n")
+            outfile.write(f"{' ':4s}VDW scale factors:{' ':16s}{' '.join([str(i) for i in flags_dict['vdw_scale_factors']])}\n")
+            outfile.write(f"{' ':4s}VDW point density:{' ':16s}{flags_dict['vdw_point_density']}\n")
 
-            if flags_dict['esp'] == 'None':
-                outfile.write(f"{' ':4s}ESP method: {' ':21s} {flags_dict['method_esp']}\n")
-                outfile.write(f"{' ':4s}ESP basis set: {' ':18s} {flags_dict['basis_esp']}\n")
+            outfile.write(f"{' ':4s}ESP method:{' ':23s}{flags_dict['method_esp']}\n")
+
+            if flags_dict['basis_esp'] == 'None':
+                outfile.write(f"{' ':4s}ESP basis set:{' ':20s}{flags_dict['basis_esp']}\n")
+            else:
+                outfile.write(f"{' ':4s}ESP basis set:\n")
+                for basis in flags_dict['basis_esp']:
+                    outfile.write(f"{' ':38s}{basis}\n")
 
             outfile.write(f'\nGrid information\n')
             outfile.write(f"{' ':4s}Quantum ESP File(s):\n")
-            for conf_n in range(len(flags_dict['input_files'])):
-                outfile.write(f"{' ':38s}{data['name'][conf_n]}_grid_esp.dat\n")
+            if flags_dict['esp'] == 'None':
+                for conf_n in range(len(flags_dict['input_files'])):
+                    outfile.write(f"{' ':38s}{data['name'][conf_n]}_grid_esp.dat\n")
+            else:
+                for conf_n in range(len(flags_dict['input_files'])):
+                    outfile.write(f"{' ':38s}{flags_dict['esp'][conf_n]}\n")
 
             outfile.write(f"\n{' ':4s}Grid Points File(s) (# of points):\n")
-            for conf_n in range(len(flags_dict['input_files'])):
-                outfile.write(f"{' ':38s}{data['name'][conf_n]}_grid.dat ({len(data['esp_values'][conf_n])})\n")
+            if flags_dict['grid'] == 'None':
+                for conf_n in range(len(flags_dict['input_files'])):
+                    outfile.write(f"{' ':38s}{data['name'][conf_n]}_grid.dat ({len(data['esp_values'][conf_n])})\n")
+            else:
+                for conf_n in range(len(flags_dict['input_files'])):
+                    outfile.write(f"{' ':38s}{flags_dict['grid'][conf_n]} ({len(data['esp_values'][conf_n])})\n")
 
             outfile.write('\nConstraints\n')
             if flags_dict['constraint_charge'] != 'None':
                 outfile.write(f"{' ':4s}Charge constraints:\n")
                 for key, value in flags_dict['constraint_charge'].items():
-                    outfile.write(f"{' ':37s} Atom {key} = {value}\n")
+                    outfile.write(f"{' ':38s}Atom {key} = {value}\n")
             else:
                 outfile.write(f"{' ':4s}Charge constraints: {flags_dict['constraint_charge']}\n")
 
@@ -79,7 +92,7 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
                 outfile.write(f"\n{' ':4s}Equivalent charges on atoms (group = atom numbers):\n")
                 count = 1
                 for i in flags_dict['equivalent_groups']:
-                    outfile.write(f"{' ':37s} group_{count} = ")
+                    outfile.write(f"{' ':38s}group_{count} = ")
                     for j in i:
                         outfile.write(f'{j} ')
                     count += 1
@@ -194,9 +207,67 @@ def parse_ini(input_ini: str) -> dict:
                         else:
                             flags_dict[key] = True
 
+                for item in ['method_esp']:
+                    if (key == item) and (flags_dict[key] != 'None'):
+                        flags_dict[key] = str(flags_dict[key])
+
+                for item in ['basis_esp']:
+                    if (key == item) and (flags_dict[key] != 'None'):
+                        flags_dict[key] = [str(item.strip("'")) for item in flags_dict[key].replace('\n', '').split(',')]
+
         return flags_dict
 
 
+# def basic_molec_data(infile: str, data_dict: dict) -> dict:
+#     """ Extract basic data from input XYZ-formatted file.
+#             Basic data includes the following
+#                 molecule's name
+#                 number of atoms
+#                 element symbols
+#                 molecular charge
+#
+#         Also creates a Psi4 molecule that is needed for QM calculations.
+#
+#         Args
+#             infile: name of XYZ-formatted file
+#             data_dict: a dictionary for storing computed data
+#
+#         Return
+#             data_dict: keys -> name, natoms, symbols, mol_charge
+#             molecule: a psi4 molecule object
+#
+#         Library dependencies
+#             psi4
+#     """
+#
+#     if not isinstance(infile, str):
+#         raise TypeError(f'The input XYZ-formatted file was not given as a string (i.e., {infile}).')
+#     elif not isinstance(data_dict, dict):
+#         raise TypeError(f'The data was not given as a dictionary (i.e., {data_dict}).')
+#     else:
+#         with open(infile) as input_file:
+#             molecule_xyz = input_file.read()
+#
+#         molec_name = os.path.splitext(infile)[0]
+#         data_dict['name'].append(molec_name)
+#
+#         molecule = psi4.core.Molecule.from_string(molecule_xyz, dtype='xyz', name=molec_name)
+#
+#         data_dict['natoms'] = molecule.natom()
+#
+#         data_dict['symbols'] = []
+#         for i in range(data_dict['natoms']):
+#             data_dict['symbols'].append(molecule.symbol(i))
+#
+#         data_dict['mol_charge'] = molecule.molecular_charge()
+#
+#         coordinates = molecule.geometry()
+#         coordinates = coordinates.np.astype('float') * bohr_to_angstrom
+#         data_dict['coordinates'].append(coordinates)
+#
+#         return data_dict, molecule
+
+## TESTING
 def basic_molec_data(infile: str, data_dict: dict) -> dict:
     """ Extract basic data from input XYZ-formatted file.
             Basic data includes the following
@@ -224,25 +295,45 @@ def basic_molec_data(infile: str, data_dict: dict) -> dict:
     elif not isinstance(data_dict, dict):
         raise TypeError(f'The data was not given as a dictionary (i.e., {data_dict}).')
     else:
-        with open(infile) as input_file:
-            molecule_xyz = input_file.read()
+        data_dict['symbols'] = []
+        coordinates = []
+        data_for_psi4 = []
 
         molec_name = os.path.splitext(infile)[0]
         data_dict['name'].append(molec_name)
 
-        molecule = psi4.core.Molecule.from_string(molecule_xyz, dtype='xyz', name=molec_name)
+        with open(infile) as input_file:
+            next(input_file)
+            next(input_file)
+            for element_coord in input_file:
+                data_for_psi4.append(element_coord)
+                line = element_coord.strip().split(" ")
+                line = list(filter(None, line))
+                data_dict['symbols'].append(line[0].upper())
+                coordinates.append(line[1:])
 
-        data_dict['natoms'] = molecule.natom()
+        data_for_psi4 = ''.join(line for line in data_for_psi4)  # Allows for additional commands (e.g. nocom)
+        data_for_psi4 = "nocom\nnoreorient\n" + data_for_psi4  # Additional commands
+        # print(f"INPUT DATA\n{data_for_psi4}\n{data_dict['symbols']}, {data_for_psi4}")
 
-        data_dict['symbols'] = []
-        for i in range(data_dict['natoms']):
-            data_dict['symbols'].append(molecule.symbol(i))
+        data_dict['natoms'] = len(data_dict['symbols'])
+
+        coordinates = np.float64(coordinates)
+        print(f'INPUT COORDS, ANGSTROMS\n {coordinates}')
+        # coordinates = coordinates / bohr_to_angstrom
+        # print(f'INPUT COORDS, BOHR\n {coordinates}')
+
+        molecule = psi4.core.Molecule.from_string(data_for_psi4, name=molec_name)  # note: will returns coords in Bohr
+        # coordinates = molecule.geometry()
+        # print(f"PSI4 COORDS, BOHR\n {coordinates.np.astype('float')}")
+        # coordinates = coordinates.np.astype('float') * bohr_to_angstrom
+        # print(f"PSI4 COORDS, ANGSTROMS\n {coordinates}")
 
         data_dict['mol_charge'] = molecule.molecular_charge()
 
-        coordinates = molecule.geometry()
-        coordinates = coordinates.np.astype('float') * bohr_to_angstrom
         data_dict['coordinates'].append(coordinates)
+
+        # print(f"FINAL FUNC DATA\n {data_dict['symbols']}\n {data_dict['natoms']}\n {type(coordinates)}\n {coordinates}\n\n")
 
         return data_dict, molecule
 
@@ -266,10 +357,13 @@ def resp(input_ini) -> list:
         raise TypeError(f'The input configparser file (i.e., {input_ini}) is not a str.')
     else:
         flags_dict = parse_ini(input_ini)
-        output_file = input_ini.replace('ini', 'out')
 
-        # print('\nYour flags:', flags_dict)
+        if (flags_dict['basis_esp'] != 'None') and (flags_dict['esp'] != 'None'):
+            raise ValueError("Error: both a basis set(s) and an input file(s) are specified for the ESP - choose one.")
+
         print('\nDetermining Partial Atomic Charges\n')
+
+        output_file = input_ini.replace('ini', 'out')
 
         data = {}
         data['coordinates'] = []
@@ -325,7 +419,7 @@ def resp(input_ini) -> list:
                 psi4.set_output_file(f'{file_basename}-psi.log')
                 psi4.core.set_active_molecule(conf)
                 # psi4.set_options({'basis': flags_dict['basis_esp']})  # fine for 1 basis set
-                psi4.basis_helper(f"{flags_dict['basis_esp']}")  # good for 1 or a mix of basis sets
+                psi4.basis_helper('\n'.join(flags_dict['basis_esp']))  # good for 1 or a mix of basis sets
                 psi4.set_options(flags_dict.get('psi4_options', {}))
                 psi4.prop(flags_dict['method_esp'], properties=['grid_esp'])
                 psi4.core.clean()
@@ -333,9 +427,12 @@ def resp(input_ini) -> list:
                 os.system(f"mv grid.dat {file_basename}_grid.dat")
                 os.system(f"mv grid_esp.dat {file_basename}_esp.dat")
 
-            data['esp_values'].append(np.loadtxt(f"{file_basename}_esp.dat"))
+                data['esp_values'].append(np.loadtxt(f"{file_basename}_esp.dat"))
+            else:
+                data['esp_values'].append(np.loadtxt(flags_dict['esp'][conf_n]))
 
             # Build a matrix of the inverse distance from each ESP point to each nucleus
+            print(f"Points: {len(points)}; Coord: {len(data['coordinates'][conf_n])}")
             inverse_dist = np.zeros((len(points), len(data['coordinates'][conf_n])))
             for i in range(inverse_dist.shape[0]):
                 for j in range(inverse_dist.shape[1]):

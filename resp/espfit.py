@@ -161,6 +161,12 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
         if difference > toler:
             warning_notes.append(f"Warning: Charge fitting unconverged; try increasing max iteration number to >{max_it}.")
 
+        print(f"RESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
+        predictions = A*q
+        targets = B
+        rmse = np.sqrt(np.mean(np.subtract(predictions, targets) ** 2))
+        print(f"RESP RMSE: {rmse}")
+
         return q[:len(symbols)], warning_notes
 
 
@@ -263,7 +269,6 @@ def fit(options: dict, data: dict):
 
         natoms = data['natoms']
         ndim = natoms + len(constraint_charges) + 1
-
         A = np.zeros((ndim, ndim))
         B = np.zeros(ndim)
 
@@ -282,24 +287,14 @@ def fit(options: dict, data: dict):
             a_matrix *= options['weight'][mol]**2
             b_vector *= options['weight'][mol]**2
 
+            print(f"SHAPE A: {np.shape(A[:natoms, :natoms])}; a: {np.shape(a_matrix)}")
             A[:natoms, :natoms] += a_matrix  # for atoms only, replace their values
             B[:natoms] += b_vector
-
-        # print("KNK weight",options['weight'])
-        # print("KNK A", A)
-        # print("KNK B", B)
 
         # Include total charge constraint
         A[:natoms, natoms] = 1  # insert 1 in column after atoms [row, column]
         A[natoms, :natoms] = 1
         B[natoms] = data['mol_charge']
-
-        # print("KNK A", A)
-        # print("KNK B", B)
-        # print('KNK mol_charge', data['mol_charge'])
-        # print('KNK natoms', natoms)
-        # print('KNK constraint_charges', constraint_charges)
-        # print('KNK constraint_indices', constraint_indices)
 
         # Include constraints to matrices A and B
         for i in range(len(constraint_charges)):
@@ -317,6 +312,12 @@ def fit(options: dict, data: dict):
         fitting_methods.append('esp')
         q, warning_notes = esp_solve(A=A, B=B, warning_notes=data['warnings'])
         q_fitted.append(q[:natoms])
+
+        print(f"ESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
+        predictions = A*q
+        targets = B
+        rmse = np.sqrt(np.mean(np.subtract(predictions, targets) ** 2))
+        print(f"ESP RMSE: {rmse}")
 
         # RESP
         if options['restraint']:
