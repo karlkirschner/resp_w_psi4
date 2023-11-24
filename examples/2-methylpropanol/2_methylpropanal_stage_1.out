@@ -1,0 +1,55 @@
+Electrostatic potential parameters
+    van der Waals radii (Angstrom):
+                                      C = 1.500
+                                      H = 1.200
+                                      O = 1.400
+    VDW scale factors:                [1.4, 1.6, 1.8, 2.0]
+    VDW point density:                1.0
+    ESP method:                       scf
+    ESP basis set:                    6-31g*
+
+Grid information
+    Quantum ESP File(s):
+                                      2_methylpropanal_1_grid_esp.dat
+                                      2_methylpropanal_2_grid_esp.dat
+                                      2_methylpropanal_3_grid_esp.dat
+                                      2_methylpropanal_4_grid_esp.dat
+                                      2_methylpropanal_5_grid_esp.dat
+                                      2_methylpropanal_6_grid_esp.dat
+
+    Grid Points File(s) (# of points):
+                                      2_methylpropanal_1_grid.dat (656)
+                                      2_methylpropanal_2_grid.dat (684)
+                                      2_methylpropanal_3_grid.dat (673)
+                                      2_methylpropanal_4_grid.dat (655)
+                                      2_methylpropanal_5_grid.dat (684)
+                                      2_methylpropanal_6_grid.dat (673)
+
+Constraints
+    Charge constraints: None
+
+    Equivalent charges on atoms: None
+
+Restraint
+    ihfree:                           False
+    resp_a:                           0.0005
+    resp_b:                           0.1000
+
+Fit
+    Electrostatic Potential Charges:
+        Center  Symbol        esp         resp        
+          1        C       0.41891069  0.41874585
+          2        H      -0.02293850 -0.01842201
+          3        C       0.38662443  0.23432552
+          4        H      -0.05230765 -0.03191152
+          5        C      -0.43059623 -0.20593247
+          6        H       0.10297957  0.04745197
+          7        H       0.10037548  0.04943501
+          8        H       0.10635493  0.04942897
+          9        O      -0.49270981 -0.48568103
+         10        C      -0.40715765 -0.19390885
+         11        H       0.09836720  0.04619511
+         12        H       0.08711065  0.03902606
+         13        H       0.10498688  0.05124738
+
+        Total Charge:     -0.00000000  0.00000000
