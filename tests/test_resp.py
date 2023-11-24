@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import psi4
 
-sys.path.insert(1, '../')
+sys.path.insert(1, '../src/')
 
 import driver as resp
 
