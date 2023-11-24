@@ -1,0 +1,35 @@
+# read in saved esp and grid files
+# If you know how these files were created, you should fill in:
+#   - vdw_scale_factors
+#   - vdw_radii, 
+#   - method_esp
+#   - basis_esp
+
+[molecules]
+input_files: acetic_acid.xyz
+    
+[vdw.surface.options]
+vdw_scale_factors : 1.4, 1.6, 1.8, 2.0
+vdw_point_density : 1.0
+esp               : acetic_acid_esp.dat
+grid              : acetic_acid_grid.dat
+vdw_radii         : H=1.20,
+                    C=1.50,
+                    O=1.40
+
+[hyperbolic.restraint.options]
+weight            : 1.0
+restraint         : True
+resp_a            : 0.0005
+resp_b            : 0.1
+ihfree            : True
+toler             : 1e-5
+max_it            : 25 
+
+[constraints]
+constraint_charge : None
+equivalent_groups : None
+
+[qm.options]
+method_esp : scf
+basis_esp  : 6-31g*

@@ -1,0 +1,46 @@
+Electrostatic potential parameters
+    van der Waals radii (Angstrom):
+                                      C = 1.500
+                                      H = 1.200
+                                      O = 1.400
+    VDW scale factors:                1.4 1.6 1.8 2.0
+    VDW point density:                1.0
+    ESP method:                       scf
+    ESP basis set:
+                                      assign 6-31g*
+
+Grid information
+    Quantum ESP File(s):
+                                      acetic_acid_grid_esp.dat
+
+    Grid Points File(s) (# of points):
+                                      acetic_acid_grid.dat (534)
+
+Constraints
+    Charge constraints:
+                                      Atom 5 = 0.8043282118269929
+                                      Atom 6 = -0.6614656885808026
+                                      Atom 7 = 0.45334412484467956
+                                      Atom 8 = -0.6002604772446537
+
+    Equivalent charges on atoms (group = atom numbers):
+                                      group_1 = 2 3 4 
+
+Restraint
+    ihfree:                           True
+    resp_a:                           0.0010
+    resp_b:                           0.1000
+
+Fit
+    Electrostatic Potential Charges:
+        Center  Symbol        esp         resp        
+          1        C      -0.30721272 -0.29096161
+          2        H       0.10375551  0.09833848
+          3        H       0.10375551  0.09833848
+          4        H       0.10375551  0.09833848
+          5        C       0.80432821  0.80432821
+          6        O      -0.66146569 -0.66146569
+          7        H       0.45334412  0.45334412
+          8        O      -0.60026048 -0.60026048
+
+        Total Charge:     -0.00000000 -0.00000000

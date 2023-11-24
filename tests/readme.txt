@@ -1,0 +1,1 @@
+/home/karl/workspace/00_molecules/01_ExTrM_Molecular_Database/00_Molecules/03_Aldehydes/2-methylpropanal/04_red/Data_amber/Mol_m1

@@ -161,6 +161,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
         if difference > toler:
             warning_notes.append(f"Warning: Charge fitting unconverged; try increasing max iteration number to >{max_it}.")
 
+        # TODO
         print(f"RESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
         predictions = A*q
         targets = B
@@ -313,6 +314,7 @@ def fit(options: dict, data: dict):
         q, warning_notes = esp_solve(A=A, B=B, warning_notes=data['warnings'])
         q_fitted.append(q[:natoms])
 
+        # TODO
         print(f"ESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
         predictions = A*q
         targets = B

@@ -1,0 +1,47 @@
+Electrostatic potential parameters
+    van der Waals radii (Angstrom):
+                                      C = 1.500
+                                      O = 1.400
+                                      H = 1.200
+    VDW scale factors:                1.4 1.6 1.8 2.0
+    VDW point density:                1.0
+    ESP method:                       None
+    ESP basis set:                    None
+
+Grid information
+    Quantum ESP File(s):
+                                      ethanol_1_esp.dat
+                                      ethanol_2_esp.dat
+
+    Grid Points File(s) (# of points):
+                                      ethanol_1_grid.dat (520)
+                                      ethanol_2_grid.dat (517)
+
+Constraints
+    Charge constraints:
+                                      Atom 3 = -0.63087078
+                                      Atom 4 = 0.377965
+
+    Equivalent charges on atoms (group = atom numbers):
+                                      group_1 = 7 8 9 
+                                      group_2 = 5 6 
+
+Restraint
+    ihfree:                           False
+    resp_a:                           0.0010
+    resp_b:                           0.1000
+
+Fit
+    Electrostatic Potential Charges:
+        Center  Symbol        esp         resp        
+          1        C      -0.26320356 -0.07985546
+          2        C       0.30502827  0.25393239
+          3        O      -0.63087078 -0.63087078
+          4        H       0.37796500  0.37796500
+          5        H      -0.01339648 -0.00771576
+          6        H      -0.01339648 -0.00771576
+          7        H       0.07929135  0.03142012
+          8        H       0.07929135  0.03142012
+          9        H       0.07929135  0.03142012
+
+        Total Charge:     -0.00000000 -0.00000000

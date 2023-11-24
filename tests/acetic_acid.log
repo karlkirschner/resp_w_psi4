@@ -1,0 +1,221 @@
+
+*** tstart() called on earth
+*** at Fri Oct 27 13:55:45 2023
+
+   => Loading Basis Set <=
+
+    Name: ANONYMOUS9A87E3BC
+    Role: ORBITAL
+    Keyword: BASIS
+    atoms 1, 5   entry C          line   111 file /media/storage-1/miniconda3/envs/psi4/share/psi4/basis/6-31gs.gbs 
+    atoms 2-4, 7 entry H          line    44 file /media/storage-1/miniconda3/envs/psi4/share/psi4/basis/6-31gs.gbs 
+    atoms 6, 8   entry O          line   145 file /media/storage-1/miniconda3/envs/psi4/share/psi4/basis/6-31gs.gbs 
+
+
+         ---------------------------------------------------------
+                                   SCF
+               by Justin Turney, Rob Parrish, Andy Simmonett
+                          and Daniel G. A. Smith
+                              RHF Reference
+                        1 Threads,    500 MiB Core
+         ---------------------------------------------------------
+
+  ==> Geometry <==
+
+    Molecular point group: cs
+    Full point group: Cs
+
+    Geometry (in Angstrom), charge = 0, multiplicity = 1:
+
+       Center              X                  Y                   Z               Mass       
+    ------------   -----------------  -----------------  -----------------  -----------------
+         C            1.450513985071    -0.066289322590     0.000000000000    12.000000000000
+         H            1.755216225071    -0.628659862590    -0.875001460000     1.007825032230
+         H            1.755216225071    -0.628659862590     0.875001460000     1.007825032230
+         H            1.921732535071     0.904858967410     0.000000000000     1.007825032230
+         C           -0.042331124929     0.098493777410     0.000000000000    12.000000000000
+         O           -0.670648074929    -1.076209152590     0.000000000000    15.994914619570
+         H           -1.608372494929    -0.910166012590     0.000000000000     1.007825032230
+         O           -0.626758544929     1.131605097410     0.000000000000    15.994914619570
+
+  Running in cs symmetry.
+
+  Rotational constants: A =      0.39043  B =      0.31910  C =      0.18142 [cm^-1]
+  Rotational constants: A =  11704.88734  B =   9566.37076  C =   5438.92090 [MHz]
+  Nuclear repulsion =  122.456331812614820
+
+  Charge       = 0
+  Multiplicity = 1
+  Electrons    = 32
+  Nalpha       = 16
+  Nbeta        = 16
+
+  ==> Algorithm <==
+
+  SCF Algorithm Type is DF.
+  DIIS enabled.
+  MOM disabled.
+  Fractional occupation disabled.
+  Guess Type is SAD.
+  Energy threshold   = 1.00e-06
+  Density threshold  = 1.00e-06
+  Integral threshold = 1.00e-12
+
+  ==> Primary Basis <==
+
+  Basis Set: ANONYMOUS9A87E3BC
+    Blend: 6-31G*
+    Number of shells: 32
+    Number of basis functions: 68
+    Number of Cartesian functions: 68
+    Spherical Harmonics?: false
+    Max angular momentum: 2
+
+   => Loading Basis Set <=
+
+    Name: (ANONYMOUS9A87E3BC AUX)
+    Role: JKFIT
+    Keyword: DF_BASIS_SCF
+    atoms 1, 5   entry C          line   121 file /media/storage-1/miniconda3/envs/psi4/share/psi4/basis/cc-pvdz-jkfit.gbs 
+    atoms 2-4, 7 entry H          line    51 file /media/storage-1/miniconda3/envs/psi4/share/psi4/basis/cc-pvdz-jkfit.gbs 
+    atoms 6, 8   entry O          line   221 file /media/storage-1/miniconda3/envs/psi4/share/psi4/basis/cc-pvdz-jkfit.gbs 
+
+  ==> Integral Setup <==
+
+  DFHelper Memory: AOs need 0.017 GiB; user supplied 0.366 GiB. Using in-core AOs.
+
+  ==> MemDFJK: Density-Fitted J/K Matrices <==
+
+    J tasked:                   Yes
+    K tasked:                   Yes
+    wK tasked:                   No
+    OpenMP threads:               1
+    Memory [MiB]:               375
+    Algorithm:                 Core
+    Schwarz Cutoff:           1E-12
+    Mask sparsity (%):       0.1298
+    Fitting Condition:        1E-10
+
+   => Auxiliary Basis Set <=
+
+  Basis Set: (ANONYMOUS9A87E3BC AUX)
+    Blend: CC-PVDZ-JKFIT
+    Number of shells: 132
+    Number of basis functions: 424
+    Number of Cartesian functions: 424
+    Spherical Harmonics?: false
+    Max angular momentum: 3
+
+  Minimum eigenvalue in the overlap matrix is 4.2608135153E-03.
+  Reciprocal condition number of the overlap matrix is 6.4577348776E-04.
+    Using symmetric orthogonalization.
+
+  ==> Pre-Iterations <==
+
+  SCF Guess: Superposition of Atomic Densities via on-the-fly atomic UHF (no occupation information).
+
+   -------------------------
+    Irrep   Nso     Nmo    
+   -------------------------
+     A'        50      50 
+     A"        18      18 
+   -------------------------
+    Total      68      68
+   -------------------------
+
+  ==> Iterations <==
+
+                           Total Energy        Delta E     RMS |[F,P]|
+
+   @DF-RHF iter SAD:  -227.05485235117851   -2.27055e+02   0.00000e+00 
+   @DF-RHF iter   1:  -227.67394837556134   -6.19096e-01   1.03326e-02 DIIS
+   @DF-RHF iter   2:  -227.76968356227019   -9.57352e-02   6.38494e-03 DIIS
+   @DF-RHF iter   3:  -227.80826866722481   -3.85851e-02   9.45470e-04 DIIS
+   @DF-RHF iter   4:  -227.80992914060249   -1.66047e-03   4.20674e-04 DIIS
+   @DF-RHF iter   5:  -227.81024835672997   -3.19216e-04   1.03767e-04 DIIS
+   @DF-RHF iter   6:  -227.81028116218630   -3.28055e-05   5.01904e-05 DIIS
+   @DF-RHF iter   7:  -227.81028924913824   -8.08695e-06   1.67466e-05 DIIS
+   @DF-RHF iter   8:  -227.81029035029403   -1.10116e-06   4.58755e-06 DIIS
+   @DF-RHF iter   9:  -227.81029043548853   -8.51945e-08   8.70199e-07 DIIS
+  Energy and wave function converged.
+
+
+  ==> Post-Iterations <==
+
+    Orbital Energies [Eh]
+    ---------------------
+
+    Doubly Occupied:                                                      
+
+       1Ap   -20.615370     2Ap   -20.553269     3Ap   -11.386018  
+       4Ap   -11.240483     5Ap    -1.477175     6Ap    -1.368197  
+       7Ap    -1.027199     8Ap    -0.831485     9Ap    -0.702647  
+      10Ap    -0.683124     1App   -0.653675    11Ap    -0.581735  
+      12Ap    -0.572252     2App   -0.562216     3App   -0.480404  
+      13Ap    -0.449171  
+
+    Virtual:                                                              
+
+       4App    0.193128    14Ap     0.226895    15Ap     0.259331  
+      16Ap     0.309105     5App    0.328774    17Ap     0.398399  
+      18Ap     0.479557    19Ap     0.523182     6App    0.730786  
+      20Ap     0.763438    21Ap     0.808767    22Ap     0.820802  
+       7App    0.824643    23Ap     0.953120    24Ap     1.004773  
+      25Ap     1.071232    26Ap     1.106893     8App    1.125663  
+      27Ap     1.163208    28Ap     1.209854     9App    1.213181  
+      29Ap     1.250408    30Ap     1.325811    10App    1.328902  
+      31Ap     1.350886    32Ap     1.598115    11App    1.636077  
+      12App    1.676098    33Ap     1.764096    34Ap     1.858989  
+      13App    2.001155    35Ap     2.027555    14App    2.096641  
+      36Ap     2.101068    37Ap     2.145710    38Ap     2.243935  
+      15App    2.302197    39Ap     2.384862    16App    2.535440  
+      40Ap     2.555539    41Ap     2.652676    17App    2.795933  
+      42Ap     2.823082    18App    3.010754    43Ap     3.084202  
+      44Ap     3.228901    45Ap     3.359022    46Ap     3.468113  
+      47Ap     4.228754    48Ap     4.461892    49Ap     4.587300  
+      50Ap     4.856778  
+
+    Final Occupation by Irrep:
+             Ap   App 
+    DOCC [    13,    3 ]
+
+  @DF-RHF Final Energy:  -227.81029043548853
+
+   => Energetics <=
+
+    Nuclear Repulsion Energy =            122.4563318126148204
+    One-Electron Energy =                -554.1643895929145174
+    Two-Electron Energy =                 203.8977673448111432
+    Total Energy =                       -227.8102904354885254
+
+Computation Completed
+
+
+Properties will be evaluated at   0.000000,   0.000000,   0.000000 [a0]
+
+Properties computed using the SCF density matrix
+
+  Nuclear Dipole Moment: [e a0]
+     X:     3.5785      Y:    -1.1834      Z:     0.0000
+
+  Electronic Dipole Moment: [e a0]
+     X:    -3.2706      Y:     0.5485      Z:     0.0000
+
+  Dipole Moment: [e a0]
+     X:     0.3079      Y:    -0.6349      Z:     0.0000     Total:     0.7056
+
+  Dipole Moment: [D]
+     X:     0.7826      Y:    -1.6138      Z:     0.0000     Total:     1.7936
+
+
+ Electrostatic potential computed on the grid and written to grid_esp.dat
+
+*** tstop() called on earth at Fri Oct 27 13:55:47 2023
+Module time:
+	user time   =       1.97 seconds =       0.03 minutes
+	system time =       0.02 seconds =       0.00 minutes
+	total time  =          2 seconds =       0.03 minutes
+Total time:
+	user time   =       1.97 seconds =       0.03 minutes
+	system time =       0.02 seconds =       0.00 minutes
+	total time  =          2 seconds =       0.03 minutes
