@@ -461,7 +461,6 @@ def resp(input_ini) -> list:
             data['coordinates'][conf_n] /= bohr_to_angstrom  # convert to angstroms
 
             data['formal_charge'] = flags_dict['formal_charge']
-            print('KNKKNK', data)
 
         # Calculate charges
         data = espfit.fit(options=flags_dict, data=data)
