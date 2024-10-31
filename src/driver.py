@@ -215,7 +215,15 @@ def parse_ini(input_ini: str) -> dict:
                     if (key == item) and (flags_dict[key] != 'None'):
                         flags_dict[key] = [str(item.strip("'")) for item in flags_dict[key].replace('\n', '').split(',')]
 
-        return flags_dict
+                for item in ['formal_charge']:
+                    if (key == item) and (flags_dict[key] != 'None'):
+                        flags_dict[key] = int(flags_dict[key])
+
+                for item in ['multiplicity']:
+                    if (key == item) and (flags_dict[key] != 'None'):
+                        flags_dict[key] = int(flags_dict[key])
+
+    return flags_dict
 
 
 # def basic_molec_data(infile: str, data_dict: dict) -> dict:
@@ -299,6 +307,8 @@ def basic_molec_data(infile: str, data_dict: dict) -> dict:
         coordinates = []
         data_for_psi4 = []
 
+        print('DICT', data_dict)
+
         molec_name = os.path.splitext(infile)[0]
         data_dict['name'].append(molec_name)
 
@@ -329,6 +339,9 @@ def basic_molec_data(infile: str, data_dict: dict) -> dict:
         # coordinates = coordinates.np.astype('float') * bohr_to_angstrom
         # print(f"PSI4 COORDS, ANGSTROMS\n {coordinates}")
 
+        # print(data_dict['formal_charge'])
+        # molecule.set_molecular_charge(data_dict['formal_charge'])
+        # molecule.set_multiplicity(data_dict['multiplicity'])
         data_dict['mol_charge'] = molecule.molecular_charge()
 
         data_dict['coordinates'].append(coordinates)
@@ -417,10 +430,16 @@ def resp(input_ini) -> list:
             # Calculate ESP values along the grid points
             if flags_dict['esp'] == 'None':
                 psi4.set_output_file(f'{file_basename}-psi.log')
+
                 psi4.core.set_active_molecule(conf)
+
                 # psi4.set_options({'basis': flags_dict['basis_esp']})  # fine for 1 basis set
                 psi4.basis_helper('\n'.join(flags_dict['basis_esp']))  # good for 1 or a mix of basis sets
                 psi4.set_options(flags_dict.get('psi4_options', {}))
+
+                conf.set_molecular_charge(flags_dict['formal_charge'])
+                conf.set_multiplicity(flags_dict['multiplicity'])
+
                 psi4.prop(flags_dict['method_esp'], properties=['grid_esp'])
                 psi4.core.clean()
 

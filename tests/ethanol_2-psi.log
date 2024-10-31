@@ -1,10 +1,10 @@
 
 *** tstart() called on Drachenfels
-*** at Thu Oct 31 08:24:14 2024
+*** at Thu Oct 31 09:12:26 2024
 
    => Loading Basis Set <=
 
-    Name: ANONYMOUSEFE93973
+    Name: ANONYMOUS332140EC
     Role: ORBITAL
     Keyword: BASIS
     atoms 1-2 entry C          line   111 file /home/karl/programs/miniconda3/envs/psi4/share/psi4/basis/6-31gs.gbs 
@@ -64,7 +64,7 @@
 
   ==> Primary Basis <==
 
-  Basis Set: ANONYMOUSEFE93973
+  Basis Set: ANONYMOUS332140EC
     Blend: 6-31G*
     Number of shells: 30
     Number of basis function: 57
@@ -74,7 +74,7 @@
 
    => Loading Basis Set <=
 
-    Name: (ANONYMOUSEFE93973 AUX)
+    Name: (ANONYMOUS332140EC AUX)
     Role: JKFIT
     Keyword: DF_BASIS_SCF
     atoms 1-2 entry C          line   121 file /home/karl/programs/miniconda3/envs/psi4/share/psi4/basis/cc-pvdz-jkfit.gbs 
@@ -109,7 +109,7 @@
 
    => Auxiliary Basis Set <=
 
-  Basis Set: (ANONYMOUSEFE93973 AUX)
+  Basis Set: (ANONYMOUS332140EC AUX)
     Blend: CC-PVDZ-JKFIT
     Number of shells: 126
     Number of basis function: 393
@@ -126,15 +126,15 @@
 
                            Total Energy        Delta E     RMS |[F,P]|
 
-   @DF-RHF iter SAD:  -153.28118562954356   -1.53281e+02   0.00000e+00 
-   @DF-RHF iter   1:  -153.97437992688603   -6.93194e-01   7.30360e-03 DIIS
-   @DF-RHF iter   2:  -154.04802041457742   -7.36405e-02   3.79348e-03 DIIS
-   @DF-RHF iter   3:  -154.06522402890880   -1.72036e-02   6.11905e-04 DIIS
-   @DF-RHF iter   4:  -154.06614719418798   -9.23165e-04   1.79466e-04 DIIS
-   @DF-RHF iter   5:  -154.06620857149454   -6.13773e-05   3.91395e-05 DIIS
-   @DF-RHF iter   6:  -154.06621236066599   -3.78917e-06   6.63650e-06 DIIS
-   @DF-RHF iter   7:  -154.06621251102806   -1.50362e-07   1.51849e-06 DIIS
-   @DF-RHF iter   8:  -154.06621251804501   -7.01695e-09   5.05016e-07 DIIS
+   @DF-RHF iter SAD:  -153.28118562957738   -1.53281e+02   0.00000e+00 
+   @DF-RHF iter   1:  -153.97437992692517   -6.93194e-01   7.30360e-03 DIIS
+   @DF-RHF iter   2:  -154.04802041461676   -7.36405e-02   3.79348e-03 DIIS
+   @DF-RHF iter   3:  -154.06522402894851   -1.72036e-02   6.11905e-04 DIIS
+   @DF-RHF iter   4:  -154.06614719422740   -9.23165e-04   1.79466e-04 DIIS
+   @DF-RHF iter   5:  -154.06620857153410   -6.13773e-05   3.91395e-05 DIIS
+   @DF-RHF iter   6:  -154.06621236070555   -3.78917e-06   6.63650e-06 DIIS
+   @DF-RHF iter   7:  -154.06621251106742   -1.50362e-07   1.51849e-06 DIIS
+   @DF-RHF iter   8:  -154.06621251808454   -7.01712e-09   5.05016e-07 DIIS
   Energy and wave function converged.
 
 
@@ -173,14 +173,14 @@
               A 
     DOCC [    13 ]
 
-  @DF-RHF Final Energy:  -154.06621251804501
+  @DF-RHF Final Energy:  -154.06621251808454
 
    => Energetics <=
 
     Nuclear Repulsion Energy =             81.4547918486333202
-    One-Electron Energy =                -370.8360332215979724
-    Two-Electron Energy =                 135.3150288549196603
-    Total Energy =                       -154.0662125180450062
+    One-Electron Energy =                -370.8360332216373081
+    Two-Electron Energy =                 135.3150288549194613
+    Total Energy =                       -154.0662125180845408
 
 Computation Completed
 
@@ -204,12 +204,12 @@ Properties computed using the SCF density matrix
 
  Electrostatic potential computed on the grid and written to grid_esp.dat
 
-*** tstop() called on Drachenfels at Thu Oct 31 08:24:15 2024
+*** tstop() called on Drachenfels at Thu Oct 31 09:12:27 2024
 Module time:
-	user time   =       1.06 seconds =       0.02 minutes
-	system time =       0.00 seconds =       0.00 minutes
+	user time   =       1.10 seconds =       0.02 minutes
+	system time =       0.02 seconds =       0.00 minutes
 	total time  =          1 seconds =       0.02 minutes
 Total time:
-	user time   =       4.85 seconds =       0.08 minutes
-	system time =       0.04 seconds =       0.00 minutes
+	user time   =       5.03 seconds =       0.08 minutes
+	system time =       0.09 seconds =       0.00 minutes
 	total time  =          5 seconds =       0.08 minutes
