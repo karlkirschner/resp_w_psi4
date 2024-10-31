@@ -295,7 +295,7 @@ def fit(options: dict, data: dict):
         # Include total charge constraint
         A[:natoms, natoms] = 1  # insert 1 in column after atoms [row, column]
         A[natoms, :natoms] = 1
-        B[natoms] = data['mol_charge']
+        B[natoms] = data['formal_charge']
 
         # Include constraints to matrices A and B
         for i in range(len(constraint_charges)):

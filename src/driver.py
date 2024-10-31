@@ -307,8 +307,6 @@ def basic_molec_data(infile: str, data_dict: dict) -> dict:
         coordinates = []
         data_for_psi4 = []
 
-        print('DICT', data_dict)
-
         molec_name = os.path.splitext(infile)[0]
         data_dict['name'].append(molec_name)
 
@@ -342,7 +340,9 @@ def basic_molec_data(infile: str, data_dict: dict) -> dict:
         # print(data_dict['formal_charge'])
         # molecule.set_molecular_charge(data_dict['formal_charge'])
         # molecule.set_multiplicity(data_dict['multiplicity'])
-        data_dict['mol_charge'] = molecule.molecular_charge()
+        # data_dict['mol_charge'] = molecule.molecular_charge()
+        # data_dict['mol_charge'] = -1
+        # print("KNKNK", data_dict['mol_charge'])
 
         data_dict['coordinates'].append(coordinates)
 
@@ -459,6 +459,9 @@ def resp(input_ini) -> list:
 
             data['inverse_dist'].append(inverse_dist * bohr_to_angstrom)  # convert to atomic units
             data['coordinates'][conf_n] /= bohr_to_angstrom  # convert to angstroms
+
+            data['formal_charge'] = flags_dict['formal_charge']
+            print('KNKKNK', data)
 
         # Calculate charges
         data = espfit.fit(options=flags_dict, data=data)
