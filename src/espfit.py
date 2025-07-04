@@ -334,5 +334,6 @@ def fit(options: dict, data: dict):
         data['fitted_charges'] = q_fitted
         data['fitting_methods'] = fitting_methods
         data['warnings'] = warning_notes
+        # data['ESP RMSE'] = rmse
 
         return data

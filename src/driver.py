@@ -429,7 +429,7 @@ def resp(input_ini) -> list:
 
             # Calculate ESP values along the grid points
             if flags_dict['esp'] == 'None':
-                psi4.set_output_file(f'{file_basename}-psi.log')
+                psi4.set_output_file(f'{file_basename}-psi.out')
 
                 psi4.core.set_active_molecule(conf)
 
