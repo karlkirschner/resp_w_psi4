@@ -12,6 +12,90 @@ import copy
 import numpy as np
 
 
+def calculate_rmse(predictions: np.ndarray, targets: np.ndarray) -> float:
+    """ Calculates the Root Mean Square Error (RMSE) between predicted and target values.
+
+        Args:
+            predictions: predicted values
+            targets    : target (observed|actual) values
+
+        Returns:
+            RMSE value
+    """
+    if predictions.shape != targets.shape:
+        raise ValueError("Predictions and targets must have the same shape.")
+    else:
+        return np.sqrt(np.mean((predictions - targets) ** 2))
+
+
+def calculate_rrms(rmse_value: float, targets: np.ndarray) -> float:
+    """ Calculates the Relative Root Mean Square (RRMS) given an RMSE value and target values.
+
+        Args:
+            rmse_value: pre-calculated RMSE value
+            targets:    target (observed|actual) values
+
+        Returns:
+            RRMS value (dimensionless)
+    """
+    rms_targets = np.sqrt(np.mean(targets ** 2)) # rms
+
+    if rms_targets == 0:
+        print("Warning: RMS of target values is zero, RRMS cannot be calculated.")
+        return np.nan
+    else:
+        rrms = rmse_value / rms_targets # relative
+
+    return rrms
+
+
+def calculate_esp_metrics(q_fitted_esp: np.ndarray, data: dict) -> dict:
+    """ Calculates the Root Mean Square Error (RMSE) and Relative Root Mean Square (RRMS)
+        of the fitted charges against the original QM ESP values at the grid points.
+
+        Args:
+            q_fitted_esp (np.ndarray): The 1D array of fitted partial atomic charges (for ESP).
+                                       This should correspond to q[:natoms] from the fit function.
+            data (dict): A dictionary containing necessary data, specifically:
+                - 'inverse_dist' (list of np.ndarray): List of inverse distance matrices (1/r_ij)
+                                                       for each conformer/molecule.
+                - 'esp_values' (list of np.ndarray): List of original quantum mechanical ESP values
+                                                     at grid points for each conformer/molecule.
+
+        Returns:
+            dict: A dictionary containing 'true_esp_rmse' and 'true_esp_rrms'.
+    """
+    all_recalculated_esp_values = []
+    all_original_esp_values = []
+
+    num_conformers = len(data['inverse_dist'])
+
+    for mol_idx in range(num_conformers):
+        # The inverse_dist matrix here is effectively 1/r_ij where i is grid point, j is atom
+        inv_r_matrix_for_conformer = data['inverse_dist'][mol_idx]
+
+        # Original QM ESP values for this conformer
+        original_V_qm_conformer = data['esp_values'][mol_idx]
+
+        # Recalculate ESP at grid points using fitted charges
+        # V_calc_i = sum_j (q_j / r_ij)
+        # This is a matrix-vector product: (num_esp_points x num_atoms) @ (num_atoms x 1)
+        recalculated_V_esp_conformer = np.dot(inv_r_matrix_for_conformer, q_fitted_esp)
+
+        all_recalculated_esp_values.extend(recalculated_V_esp_conformer)
+        all_original_esp_values.extend(original_V_qm_conformer)
+
+    # lists to arrays
+    all_recalculated_esp_values = np.array(all_recalculated_esp_values)
+    all_original_esp_values = np.array(all_original_esp_values)
+
+    true_esp_rmse = calculate_rmse(predictions=all_recalculated_esp_values, targets=all_original_esp_values)
+    true_esp_rrms = calculate_rrms(rmse_value=true_esp_rmse, targets=all_original_esp_values)
+
+    return {'true_esp_rmse': true_esp_rmse,
+            'true_esp_rrms': true_esp_rrms}
+
+
 def esp_solve(A: np.ndarray, B: np.ndarray, warning_notes: list) -> np.ndarray:
     """ Solves for point charges: A*q = B.
 
@@ -26,7 +110,6 @@ def esp_solve(A: np.ndarray, B: np.ndarray, warning_notes: list) -> np.ndarray:
             numpy
             warnings
     """
-
     q = np.linalg.solve(A, B)
 
     # Warning for near singular matrix, in case np.linalg.solve doesn't detect a singularity
@@ -64,7 +147,6 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
                 atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
                 (Eqs. 10, 13)
     """
-
     if not isinstance(q, np.ndarray):
         raise TypeError(f'The input charges is not given as a np.ndarray (i.e., {q} variable).')
     elif not isinstance(A_unrestrained, np.ndarray):
@@ -101,7 +183,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
         Args:
             q              : initial charges
             A_unrestrained : unrestrained A matrix
-            B              : matrix B
+            B              : matrix B (i.e., the QM target values)
             resp_a         : restraint scale a
             resp_b         : restraint parabola tightness b
             toler          : tolerance for charges in the fitting
@@ -118,7 +200,6 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
             copy
             numpy
     """
-
     if not isinstance(q, np.ndarray):
         raise TypeError(f'The input charges is not given as a np.ndarray (i.e., {q} variable).')
     elif not isinstance(A_unrestrained, np.ndarray):
@@ -161,13 +242,6 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
         if difference > toler:
             warning_notes.append(f"Warning: Charge fitting unconverged; try increasing max iteration number to >{max_it}.")
 
-        # TODO
-        print(f"RESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
-        predictions = A*q
-        targets = B
-        rmse = np.sqrt(np.mean(np.subtract(predictions, targets) ** 2))
-        print(f"RESP RMSE: {rmse}")
-
         return q[:len(symbols)], warning_notes
 
 
@@ -193,7 +267,6 @@ def intramolecular_constraints(constraint_charge: (dict, bool), equivalent_group
             Atom indices starts with 1 not 0.
             Total charge constraint is added by default for the first molecule.
     """
-
     if not isinstance(constraint_charge, (dict, bool)):
         raise TypeError(f'The input options are not a dictionary or boolean (i.e., {constraint_charge} variable).')
     elif not isinstance(equivalent_groups, (list, bool)):
@@ -201,13 +274,6 @@ def intramolecular_constraints(constraint_charge: (dict, bool), equivalent_group
     else:
         constrained_charges = []
         constrained_indices = []
-
-        # for i in constraint_charge:
-        #     constrained_charges.append(i[0])
-        #     group = []
-        #     for k in i[1]:
-        #         group.append(k)
-        #     constrained_indices.append(group)
 
         if constraint_charge:
             for key, value in constraint_charge.items():
@@ -246,7 +312,6 @@ def fit(options: dict, data: dict):
                 atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
                 (Eqs. 12-14)
     """
-
     if not isinstance(options, dict):
         raise TypeError(f'The input options are not a dictionary (i.e., {options} variable).')
     elif not isinstance(data, dict):
@@ -270,21 +335,28 @@ def fit(options: dict, data: dict):
 
         natoms = data['natoms']
         ndim = natoms + len(constraint_charges) + 1
+
+        # A: the matrix of coefficients in the linear system of equations (A mathbf{q} = B) that is solved to determine the partial atomic charges mathbf{q}.
+        # mathbf{q} = vector of unknowns (i.e. the partial atomic charges)
+        # B: target vector that consists of known values
         A = np.zeros((ndim, ndim))
         B = np.zeros(ndim)
 
         # Reference [1] (Eqs. 12-14)
         for mol in range(len(data['inverse_dist'])):
+            # V: QM ESP values computed on grid points around a conformer/molecule
             r_inverse, V = data['inverse_dist'][mol], data['esp_values'][mol]
 
-            # The a_matrix and b_vector are for one molecule, without the addition of constraints.
+            # The a_matrix and b_vector are for one conformer/molecule, without the addition of constraints.
+            # a_matrix: essentially a sum over all ESP grid points (i) of the product of (1/r_ij) * (1/r_ik)
             # Construct a_matrix: a_jk = sum_i [(1/r_ij)*(1/r_ik)] Eq. 12 -> i.e., 1/r^2
             a_matrix = np.einsum("ij, ik -> jk", r_inverse, r_inverse)
 
             # Construct b_vector: b_j = sum_i (V_i/r_ij) -> i.e., esp/r
+            # b_vector: essentially a sum over all grid points (i) for each atom (j) of V_i / r_ij. This term directly relates the target ESP at the grid points to the atomic centers.
             b_vector = np.einsum('i, ij->j', V, r_inverse)
 
-            # Weight the molecule
+            # Weight the conformer/molecule and go ahead and square them eventual multiplying with least-square fit formula
             a_matrix *= options['weight'][mol]**2
             b_vector *= options['weight'][mol]**2
 
@@ -312,14 +384,21 @@ def fit(options: dict, data: dict):
         # ESP
         fitting_methods.append('esp')
         q, warning_notes = esp_solve(A=A, B=B, warning_notes=data['warnings'])
-        q_fitted.append(q[:natoms])
+        q_fitted_esp = q[:natoms]
+        q_fitted.append(q_fitted_esp)
 
-        # TODO
-        print(f"ESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
-        predictions = A*q
-        targets = B
-        rmse = np.sqrt(np.mean(np.subtract(predictions, targets) ** 2))
-        print(f"ESP RMSE: {rmse}")
+        print(f"\nESP shapes - A:{np.shape(A)}; B:{np.shape(B)}; q: {np.shape(q)}")
+
+        predictions = np.dot(A, q)  # original form: A*q
+
+        # RMSE internal consistency check of the prediction's linear algebra
+        rmse = calculate_rmse(predictions=predictions, targets=B)
+        print(f"Internal ESP RMSE: {rmse}")
+
+        # real fitting error: original QM ESP values and the ESP values recalculated from your fitted charges at the original grid points
+        esp_metrics = calculate_esp_metrics(q_fitted_esp=q_fitted_esp, data=data)
+        print(f"True ESP RMSE (vs original grid points): {esp_metrics['true_esp_rmse']}")
+        print(f"True ESP RRMS (vs original grid points): {esp_metrics['true_esp_rrms']}\n")
 
         # RESP
         if options['restraint']:
@@ -329,11 +408,17 @@ def fit(options: dict, data: dict):
                                        max_it=options['max_it'], num_conformers=len(data['inverse_dist']),
                                        ihfree=options['ihfree'], symbols=data['symbols'],
                                        warning_notes=data['warnings'])
-            q_fitted.append(q)
+        q_fitted_esp = q[:natoms]
+        q_fitted.append(q_fitted_esp)
+
+        resp_metrics = calculate_esp_metrics(q_fitted_esp=q_fitted_esp, data=data)
+        print(f"True RESP RMSE (vs original grid points): {resp_metrics['true_esp_rmse']}")
+        print(f"True RESP RRMS (vs original grid points): {resp_metrics['true_esp_rrms']}")
 
         data['fitted_charges'] = q_fitted
         data['fitting_methods'] = fitting_methods
         data['warnings'] = warning_notes
         # data['ESP RMSE'] = rmse
+        # data['ESP RRMS'] = rrms
 
         return data

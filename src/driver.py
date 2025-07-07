@@ -428,6 +428,10 @@ def resp(input_ini) -> list:
                     np.savetxt('grid.dat', points, fmt='%15.10f')
 
             # Calculate ESP values along the grid points
+            # From Manual, v. 1.10a1.dev86": "The grid.dat file is completely free form; any number of spaces and/or newlines between entries is permitted.
+            #                                 The units of the coordinates in grid.dat are the same as those used to specify the molecule’s geometry,
+            #                                 and the output quantities are always in atomic units."
+            #   Atomic units: Hartrees/charge or Hartrees/e
             if flags_dict['esp'] == 'None':
                 psi4.set_output_file(f'{file_basename}-psi.out')
 
