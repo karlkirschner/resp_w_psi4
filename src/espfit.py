@@ -320,13 +320,13 @@ def fit(options: dict, data: dict):
     else:
         q_fitted = []
         fitting_methods = []
-        if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
+        if (options['constraint_charge'] is not None) and (options['equivalent_groups'] is not None):
             constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
                                                                                 equivalent_groups=options['equivalent_groups'])
-        elif (options['constraint_charge'] == 'None') and (options['equivalent_groups'] != 'None'):
+        elif (options['constraint_charge'] is None) and (options['equivalent_groups'] is not None):
             constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=False,
                                                                                 equivalent_groups=options['equivalent_groups'])
-        elif (options['constraint_charge'] != 'None') and (options['equivalent_groups'] == 'None'):
+        elif (options['constraint_charge'] is not None) and (options['equivalent_groups'] is None):
             constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
                                                                                 equivalent_groups=False)
         else:
