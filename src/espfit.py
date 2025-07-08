@@ -5,8 +5,6 @@ Reference:
 Equations taken from [Bayly:93:10269].
 """
 
-from __future__ import division, absolute_import, print_function
-
 import copy
 
 import numpy as np
@@ -89,6 +87,9 @@ def calculate_esp_metrics(q_fitted_esp: np.ndarray, data: dict) -> dict:
     all_recalculated_esp_values = np.array(all_recalculated_esp_values)
     all_original_esp_values = np.array(all_original_esp_values)
 
+    print(f'\nNumber of predicted values along grid points: {len(all_recalculated_esp_values)}')
+    print(f'Number of target values along grid points: {len(all_original_esp_values)}\n')
+
     true_esp_rmse = calculate_rmse(predictions=all_recalculated_esp_values, targets=all_original_esp_values)
     true_esp_rrms = calculate_rrms(rmse_value=true_esp_rmse, targets=all_original_esp_values)
 
@@ -160,7 +161,7 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
     elif not isinstance(symbols, list):
         raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')
     elif not isinstance(num_conformers, int):
-        raise TypeError(f'The num_conformers is not given as a float (i.e., {num_conformers} variable).')
+        raise TypeError(f'The num_conformers is not given as a int (i.e., {num_conformers} variable).')
     else:
         A = copy.deepcopy(A_unrestrained)
 
@@ -213,7 +214,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
     elif not isinstance(ihfree, bool):
         raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree} variable).')
     elif not isinstance(symbols, list):
-        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')  #  was np.ndarray
+        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')
     elif not isinstance(toler, float):
         raise TypeError(f'The toler is not given as a float (i.e., {toler} variable).')
     elif not isinstance(max_it, int):
@@ -225,7 +226,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
     else:
         q_last = copy.deepcopy(q)
 
-        n_it = 0  # current number of interation
+        n_it = 0
         difference = 2*toler
 
         while (difference > toler) and (n_it < max_it):
@@ -235,6 +236,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
 
             q, warning_notes = esp_solve(A=A, B=B, warning_notes=warning_notes)
 
+            # Convergence check
             # Extract vector elements that correspond to charges
             difference = np.sqrt(np.max((q[:len(symbols)] - q_last[:len(symbols)])**2))
             q_last = copy.deepcopy(q)
@@ -283,12 +285,11 @@ def intramolecular_constraints(constraint_charge: (dict, bool), equivalent_group
             for i in equivalent_groups:
                 for j in range(1, len(i)):
                     group = []
-                    constrained_charges.append(0)  # TODO: Why 0 - the target value for each equivalent_groups is 0.0?
+                    constrained_charges.append(0.0)  # Target value for equivalent charge constraints is zero (q_A - q_B = 0)
                     group.append(-i[j-1])
                     group.append(i[j])
                     constrained_indices.append(group)
 
-        # print('TEST', constrained_charges, constrained_indices)
         return constrained_charges, constrained_indices
 
 
@@ -319,7 +320,6 @@ def fit(options: dict, data: dict):
     else:
         q_fitted = []
         fitting_methods = []
-        # print('KNK: ', options['constraint_charge'], options['equivalent_groups'])
         if (options['constraint_charge'] != 'None') and (options['equivalent_groups'] != 'None'):
             constraint_charges, constraint_indices = intramolecular_constraints(constraint_charge=options['constraint_charge'],
                                                                                 equivalent_groups=options['equivalent_groups'])
@@ -360,7 +360,8 @@ def fit(options: dict, data: dict):
             a_matrix *= options['weight'][mol]**2
             b_vector *= options['weight'][mol]**2
 
-            print(f"SHAPE A: {np.shape(A[:natoms, :natoms])}; a: {np.shape(a_matrix)}")
+            # print(f"SHAPE A: {np.shape(A[:natoms, :natoms])}; a: {np.shape(a_matrix)}")
+            # print(f"SHAPE B: {np.shape(B)}; b: {np.shape(b_vector)}")
             A[:natoms, :natoms] += a_matrix  # for atoms only, replace their values
             B[:natoms] += b_vector
 
@@ -368,6 +369,9 @@ def fit(options: dict, data: dict):
         A[:natoms, natoms] = 1  # insert 1 in column after atoms [row, column]
         A[natoms, :natoms] = 1
         B[natoms] = data['formal_charge']
+
+        # print(f"SHAPE A final: {np.shape(A[:natoms, :natoms])}; a: {np.shape(a_matrix)}")
+        # print(f"SHAPE B final: {np.shape(B)}; b: {np.shape(b_vector)}")
 
         # Include constraints to matrices A and B
         for i in range(len(constraint_charges)):
@@ -400,6 +404,9 @@ def fit(options: dict, data: dict):
         print(f"True ESP RMSE (vs original grid points): {esp_metrics['true_esp_rmse']}")
         print(f"True ESP RRMS (vs original grid points): {esp_metrics['true_esp_rrms']}\n")
 
+        data['esp_rmse_true'] = esp_metrics['true_esp_rmse'] # Store RESP metrics
+        data['esp_rrms_true'] = esp_metrics['true_esp_rrms'] # Store RESP metrics
+
         # RESP
         if options['restraint']:
             fitting_methods.append('resp')
@@ -408,17 +415,18 @@ def fit(options: dict, data: dict):
                                        max_it=options['max_it'], num_conformers=len(data['inverse_dist']),
                                        ihfree=options['ihfree'], symbols=data['symbols'],
                                        warning_notes=data['warnings'])
-        q_fitted_esp = q[:natoms]
-        q_fitted.append(q_fitted_esp)
+            q_fitted_esp = q[:natoms]
+            q_fitted.append(q_fitted_esp)
 
-        resp_metrics = calculate_esp_metrics(q_fitted_esp=q_fitted_esp, data=data)
-        print(f"True RESP RMSE (vs original grid points): {resp_metrics['true_esp_rmse']}")
-        print(f"True RESP RRMS (vs original grid points): {resp_metrics['true_esp_rrms']}")
+            resp_metrics = calculate_esp_metrics(q_fitted_esp=q_fitted_esp, data=data)
+            print(f"True RESP RMSE (vs original grid points): {resp_metrics['true_esp_rmse']}")
+            print(f"True RESP RRMS (vs original grid points): {resp_metrics['true_esp_rrms']}")
+
+            data['resp_rmse_true'] = resp_metrics['true_esp_rmse'] # Store RESP metrics
+            data['resp_rrms_true'] = resp_metrics['true_esp_rrms'] # Store RESP metrics
 
         data['fitted_charges'] = q_fitted
         data['fitting_methods'] = fitting_methods
         data['warnings'] = warning_notes
-        # data['ESP RMSE'] = rmse
-        # data['ESP RRMS'] = rrms
 
         return data

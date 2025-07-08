@@ -1,7 +1,6 @@
 """
 Driver for the RESP code.
 """
-from __future__ import division, absolute_import, print_function
 
 # Original Work:
 __authors__ = "Asem Alenaizan"
@@ -16,6 +15,7 @@ __authors__ = ["Karl N. Kirschner"]
 __credits__ = ["Karl N. Kirschner"]
 __date__ = "2023-11"
 
+import ast           # For safely evaluating list/dict literals from strings
 import configparser
 import os
 
@@ -127,6 +127,129 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
             for i in data['fitted_charges']:
                 outfile.write(f'{np.sum(i):12.8f}')
             outfile.write('\n')
+
+            outfile.write(f"\n{' ':8s}Fitting Stats:{' ':4s}")
+            outfile.write(f"\n{' ':8s}RMSE{' ':4s}RRMS\n")
+            outfile.write(f'{data['esp_rmse_true']:12.5f}{data['resp_rmse_true']:12.5f}')
+            outfile.write('\n')
+
+
+# def parse_ini(input_ini: str) -> dict:
+#     """ Processes the input configuration file.
+
+#         Args:
+#             input_ini (str): A string that corresponds to a configparser ini file path.
+
+#         Returns:
+#             dict: All flags processed from input_ini, with appropriate type conversions.
+
+#         Library dependencies:
+#             configparser
+#             ast (for literal_eval)
+#     """
+#     if not isinstance(input_ini, str):
+#         raise TypeError(f'The input_ini must be a string (i.e., {input_ini}).')
+
+#     config = configparser.ConfigParser()
+#     config.read(input_ini)
+
+#     flags_dict = {}
+
+#     # Helper function to convert 'None' string to Python None
+#     def convert_none(value_str):
+#         return None if value_str.strip().lower() == 'none' else value_str
+
+#     # Iterate through all sections and keys
+#     for section in config.sections(): # Use config.sections() to avoid the DEFAULT section if it's not needed
+#         for key in config[section]:
+#             raw_value = config.get(section, key)
+#             processed_value = convert_none(raw_value) # Convert 'None' string to Python None first
+
+#             if processed_value is None:
+#                 flags_dict[key] = None
+#                 continue # Move to the next key if it's explicitly None
+
+#             # --- Type-specific parsing ---
+#             if key == 'input_files':
+#                 # Split by comma, strip spaces, remove newlines (from multi-line values)
+#                 flags_dict[key] = [item.strip().replace('\n', '') for item in processed_value.split(',')]
+
+#             elif key == 'constraint_charge':
+#                 # Expects 'atom_number = partial_charge, atom_number = partial_charge, ...'
+#                 parsed_constraints = {}
+#                 # Split by comma to get individual constraints
+#                 for constraint_str in processed_value.split(','):
+#                     constraint_str = constraint_str.strip()
+#                     if constraint_str: # Skip empty strings
+#                         try:
+#                             atom_number_str, value_str = constraint_str.split('=')
+#                             atom_number = int(atom_number_str.strip())
+#                             value = float(value_str.strip())
+#                             parsed_constraints[atom_number] = value
+#                         except ValueError as e:
+#                             print(f"Warning: Could not parse constraint_charge part '{constraint_str}'. Error: {e}")
+#                             # Optionally, you might want to raise an error or set a default
+#                             # For now, it will just skip malformed parts.
+#                 flags_dict[key] = parsed_constraints
+
+#             elif key == 'equivalent_groups':
+#                 # Expects a Python list literal string, e.g., '[[1, 2], [3, 4]]'
+#                 try:
+#                     flags_dict[key] = ast.literal_eval(processed_value)
+#                 except (ValueError, SyntaxError) as e:
+#                     print(f"Error parsing equivalent_groups '{processed_value}': {e}. Ensure it's a valid Python list literal string.")
+#                     flags_dict[key] = None # Set to None if parsing fails
+
+#             elif key in ['esp', 'grid', 'basis_esp']:
+#                 # List of strings (file names)
+#                 flags_dict[key] = [item.strip() for item in processed_value.replace(' ', '').replace('\n', '').split(',')]
+
+#             elif key in ['vdw_scale_factors', 'weight']:
+#                 # List of floats
+#                 flags_dict[key] = [float(item.strip()) for item in processed_value.replace(' ', '').replace('\n', '').split(',')]
+
+#             elif key == 'vdw_radii':
+#                 # Dictionary of element: radius
+#                 parsed_radii = {}
+#                 for item_str in processed_value.split(','):
+#                     item_str = item_str.strip()
+#                     if item_str:
+#                         try:
+#                             element, radius = item_str.split('=')
+#                             parsed_radii[element.strip()] = float(radius.strip())
+#                         except ValueError as e:
+#                             print(f"Warning: Could not parse vdw_radii part '{item_str}'. Error: {e}")
+#                 flags_dict[key] = parsed_radii
+
+#             elif key in ['vdw_point_density', 'resp_a', 'resp_b', 'toler']:
+#                 # Float values
+#                 try:
+#                     flags_dict[key] = float(processed_value)
+#                 except ValueError as e:
+#                     print(f"Error parsing float for '{key}': '{processed_value}'. Error: {e}")
+#                     flags_dict[key] = None # Or raise error
+
+#             elif key in ['max_it', 'formal_charge', 'multiplicity']:
+#                 # Integer values
+#                 try:
+#                     flags_dict[key] = int(processed_value)
+#                 except ValueError as e:
+#                     print(f"Error parsing int for '{key}': '{processed_value}'. Error: {e}")
+#                     flags_dict[key] = None # Or raise error
+
+#             elif key in ['restraint', 'ihfree']:
+#                 # Boolean values
+#                 flags_dict[key] = processed_value.lower() == 'true' # Converts 'True' to True, 'False' to False
+
+#             elif key == 'method_esp':
+#                 # Simple string (already handled by default if not 'None')
+#                 flags_dict[key] = processed_value
+
+#             else:
+#                 # Default for any unhandled keys: keep as string
+#                 flags_dict[key] = processed_value
+
+#     return flags_dict
 
 
 def parse_ini(input_ini: str) -> dict:
