@@ -336,138 +336,222 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
 #             outfile.write('\n')
 
 
+## NEWEST:
+
+import configparser
+
+import configparser
+
 def parse_ini(input_ini: str) -> dict:
-    """ Processes the input configuration file.
-
-        Args:
-            input_ini (str): A string that corresponds to a configparser ini file path.
-
-        Returns:
-            dict: All flags processed from input_ini, with appropriate type conversions.
-
-        Library dependencies:
-            configparser
-            ast (for literal_eval)
-    """
     if not isinstance(input_ini, str):
         raise TypeError(f'The input_ini must be a string (i.e., {input_ini}).')
 
     config = configparser.ConfigParser()
     config.read(input_ini)
-
     flags_dict = {}
 
-    # Helper function to convert 'None' string to Python None
     def convert_none(value_str):
-        return None if value_str.strip().lower() == 'none' else value_str
+        if value_str.strip().lower() == 'none':
+            return None
+        return value_str
 
-    # Iterate through all sections and keys
-    for section in config.sections(): # Use config.sections() to avoid the DEFAULT section if it's not needed
+    for section in config.sections():
         for key in config[section]:
             raw_value = config.get(section, key)
-            processed_value = convert_none(raw_value) # Convert 'None' string to Python None first
+            processed_value = convert_none(raw_value)
 
+            # --- 1. Handle explicit 'None' values ---
             if processed_value is None:
-                flags_dict[key] = None
-                continue # Move to the next key if it's explicitly None
+                # To make 'if x is None' checks in the driver work, 
+                # we return None for almost everything.
+                if key in ['vdw_radii', 'constraint_charge']:
+                    flags_dict[key] = {} # Dicts are usually safe as {}
+                else:
+                    flags_dict[key] = None
+                continue 
 
-            # --- Type-specific parsing ---
+            # --- 2. Type-specific parsing ---
             if key == 'input_files':
-                # Split by comma, strip spaces, remove newlines (from multi-line values)
                 flags_dict[key] = [item.strip().replace('\n', '') for item in processed_value.split(',')]
 
-
             elif key == 'constraint_charge':
-                ## Original code
-                # constraint_q_list = (constraints.replace('\n', '').replace(' ', '').split('=')
-                #                      for constraints in processed_value.split(','))
-                # flags_dict[key] = {int(atom_number): float(value) for atom_number, value in constraint_q_list}
-
-                # Expects 'atom_number = partial_charge, atom_number = partial_charge, ...'
-
                 parsed_constraints = {}
-                # Split by comma to get individual constraints
                 for constraint_str in processed_value.split(','):
-                    constraint_str = constraint_str.strip()
-                    if constraint_str: # Skip empty strings
-                        try:
-                            atom_number_str, value_str = constraint_str.split('=')
-                            atom_number = int(atom_number_str.strip())
-                            value = float(value_str.strip())
-                            parsed_constraints[atom_number] = value
-                        except ValueError as e:
-                            print(f"Warning: Could not parse constraint_charge part '{constraint_str}'. Error: {e}")
-                            # Optionally, you might want to raise an error or set a default
-                            # For now, it will just skip malformed parts.
+                    if '=' in constraint_str:
+                        atom_num, val = constraint_str.split('=')
+                        parsed_constraints[int(atom_num.strip())] = float(val.strip())
                 flags_dict[key] = parsed_constraints
 
             elif key == 'equivalent_groups':
                 all_groups = []
-                for constraints in processed_value.replace('\n', '').split(','):
-                    group = constraints.split('=')
-                    atom_list = []
-                    atom_list.extend(atom_number for atom_number in group[1].split())
-                    atom_list = [int(x) for x in list(filter(None, atom_list))]  # remove empty strings, ensure int
-                    all_groups.append(atom_list)
+                for group_str in processed_value.split(','):
+                    if '=' in group_str:
+                        atoms = group_str.split('=')[1].split()
+                        all_groups.append([int(a) for a in atoms])
                 flags_dict[key] = all_groups
 
-
-            elif key in ['esp', 'grid']:
-                # List of strings (file names)
-                flags_dict[key] = [item.strip() for item in processed_value.replace(' ', '').replace('\n', '').split(',')]
+            elif key in ['esp', 'grid', 'basis_esp']:
+                items = [item.strip() for item in processed_value.split(',') if item.strip()]
+                # If there's no real data, set to None so driver doesn't try to index it
+                flags_dict[key] = items if items else None
 
             elif key in ['vdw_scale_factors', 'weight']:
-                # List of floats
-                flags_dict[key] = [float(item.strip()) for item in processed_value.replace(' ', '').replace('\n', '').split(',')]
+                flags_dict[key] = [float(i.strip()) for i in processed_value.split(',')]
 
             elif key == 'vdw_radii':
-                # Dictionary of element: radius
                 parsed_radii = {}
                 for item_str in processed_value.split(','):
-                    item_str = item_str.strip()
-                    if item_str:
-                        try:
-                            element, radius = item_str.split('=')
-                            parsed_radii[element.strip()] = float(radius.strip())
-                        except ValueError as e:
-                            print(f"Warning: Could not parse vdw_radii part '{item_str}'. Error: {e}")
+                    if '=' in item_str:
+                        el, rad = item_str.split('=')
+                        parsed_radii[el.strip()] = float(rad.strip())
                 flags_dict[key] = parsed_radii
 
             elif key in ['vdw_point_density', 'resp_a', 'resp_b', 'toler']:
-                # Float values
-                try:
-                    flags_dict[key] = float(processed_value)
-                except ValueError as e:
-                    print(f"Error parsing float for '{key}': '{processed_value}'. Error: {e}")
-                    flags_dict[key] = None # Or raise error
+                flags_dict[key] = float(processed_value)
 
             elif key in ['max_it', 'formal_charge', 'multiplicity']:
-                # Integer values
-                try:
-                    flags_dict[key] = int(processed_value)
-                except ValueError as e:
-                    print(f"Error parsing int for '{key}': '{processed_value}'. Error: {e}")
-                    flags_dict[key] = None # Or raise error
+                flags_dict[key] = int(processed_value)
 
             elif key in ['restraint', 'ihfree']:
-                # Boolean values
-                flags_dict[key] = processed_value.lower() == 'true' # Converts 'True' to True, 'False' to False
-
-            elif key == 'method_esp':
-                # Simple string (already handled by default if not 'None')
-                flags_dict[key] = processed_value
-
-            elif key == 'basis_esp':
-                for item in ['basis_esp']:
-                    print(item, processed_value)
-                    flags_dict[key] = [str(item.strip("'")) for item in processed_value.replace('\n', '').split(',')]
+                flags_dict[key] = processed_value.lower() == 'true'
 
             else:
-                print('TEST OTHER')
-                # Default for any unhandled keys: keep as string
                 flags_dict[key] = processed_value
 
     return flags_dict
+## New
+# def parse_ini(input_ini: str) -> dict:
+#     """ Processes the input configuration file.
+
+#         Args:
+#             input_ini: A string that corresponds to a configparser ini file path.
+
+#         Returns:
+#             dict: All flags processed from input_ini, with appropriate type conversions.
+
+#         Library dependencies:
+#             configparser
+#             ast (for literal_eval)
+#     """
+#     if not isinstance(input_ini, str):
+#         raise TypeError(f'The input_ini must be a string (i.e., {input_ini}).')
+
+#     config = configparser.ConfigParser()
+#     config.read(input_ini)
+
+#     flags_dict = {}
+
+#     # Helper function to convert 'None' string to Python None
+#     def convert_none(value_str):
+#         return None if value_str.strip().lower() == 'none' else value_str
+
+#     # Iterate through all sections and keys
+#     for section in config.sections(): # Use config.sections() to avoid the DEFAULT section if it's not needed
+#         for key in config[section]:
+#             raw_value = config.get(section, key)
+#             processed_value = convert_none(raw_value) # Convert 'None' string to Python None first
+
+#             if processed_value is None:
+#                 flags_dict[key] = None
+#                 continue # Move to the next key if it's explicitly None
+
+#             # --- Type-specific parsing ---
+#             if key == 'input_files':
+#                 # Split by comma, strip spaces, remove newlines (from multi-line values)
+#                 flags_dict[key] = [item.strip().replace('\n', '') for item in processed_value.split(',')]
+
+
+#             elif key == 'constraint_charge':
+#                 ## Original code
+#                 # constraint_q_list = (constraints.replace('\n', '').replace(' ', '').split('=')
+#                 #                      for constraints in processed_value.split(','))
+#                 # flags_dict[key] = {int(atom_number): float(value) for atom_number, value in constraint_q_list}
+
+#                 # Expects 'atom_number = partial_charge, atom_number = partial_charge, ...'
+
+#                 parsed_constraints = {}
+#                 # Split by comma to get individual constraints
+#                 for constraint_str in processed_value.split(','):
+#                     constraint_str = constraint_str.strip()
+#                     if constraint_str: # Skip empty strings
+#                         try:
+#                             atom_number_str, value_str = constraint_str.split('=')
+#                             atom_number = int(atom_number_str.strip())
+#                             value = float(value_str.strip())
+#                             parsed_constraints[atom_number] = value
+#                         except ValueError as e:
+#                             print(f"Warning: Could not parse constraint_charge part '{constraint_str}'. Error: {e}")
+#                             # Optionally, you might want to raise an error or set a default
+#                             # For now, it will just skip malformed parts.
+#                 flags_dict[key] = parsed_constraints
+
+#             elif key == 'equivalent_groups':
+#                 all_groups = []
+#                 for constraints in processed_value.replace('\n', '').split(','):
+#                     group = constraints.split('=')
+#                     atom_list = []
+#                     atom_list.extend(atom_number for atom_number in group[1].split())
+#                     atom_list = [int(x) for x in list(filter(None, atom_list))]  # remove empty strings, ensure int
+#                     all_groups.append(atom_list)
+#                 flags_dict[key] = all_groups
+
+
+#             elif key in ['esp', 'grid']:
+#                 # List of strings (file names)
+#                 flags_dict[key] = [item.strip() for item in processed_value.replace(' ', '').replace('\n', '').split(',')]
+
+#             elif key in ['vdw_scale_factors', 'weight']:
+#                 # List of floats
+#                 flags_dict[key] = [float(item.strip()) for item in processed_value.replace(' ', '').replace('\n', '').split(',')]
+
+#             elif key == 'vdw_radii':
+#                 # Dictionary of element: radius
+#                 parsed_radii = {}
+#                 for item_str in processed_value.split(','):
+#                     item_str = item_str.strip()
+#                     if item_str:
+#                         try:
+#                             element, radius = item_str.split('=')
+#                             parsed_radii[element.strip()] = float(radius.strip())
+#                         except ValueError as e:
+#                             print(f"Warning: Could not parse vdw_radii part '{item_str}'. Error: {e}")
+#                 flags_dict[key] = parsed_radii
+
+#             elif key in ['vdw_point_density', 'resp_a', 'resp_b', 'toler']:
+#                 # Float values
+#                 try:
+#                     flags_dict[key] = float(processed_value)
+#                 except ValueError as e:
+#                     print(f"Error parsing float for '{key}': '{processed_value}'. Error: {e}")
+#                     flags_dict[key] = None # Or raise error
+
+#             elif key in ['max_it', 'formal_charge', 'multiplicity']:
+#                 # Integer values
+#                 try:
+#                     flags_dict[key] = int(processed_value)
+#                 except ValueError as e:
+#                     print(f"Error parsing int for '{key}': '{processed_value}'. Error: {e}")
+#                     flags_dict[key] = None # Or raise error
+
+#             elif key in ['restraint', 'ihfree']:
+#                 # Boolean values
+#                 flags_dict[key] = processed_value.lower() == 'true' # Converts 'True' to True, 'False' to False
+
+#             elif key == 'method_esp':
+#                 # Simple string (already handled by default if not 'None')
+#                 flags_dict[key] = processed_value
+
+#             elif key == 'basis_esp':
+#                 for item in ['basis_esp']:
+#                     print(item, processed_value)
+#                     flags_dict[key] = [str(item.strip("'")) for item in processed_value.replace('\n', '').split(',')]
+
+#             else:
+#                 print('TEST OTHER')
+#                 # Default for any unhandled keys: keep as string
+#                 flags_dict[key] = processed_value
+
+#     return flags_dict
 
 
 ## Original Code:
@@ -483,7 +567,7 @@ def parse_ini(input_ini: str) -> dict:
 #         Library dependencies
 #             configparser
 #     """
-
+#     print("KNK")
 #     if not isinstance(input_ini, str):
 #         raise TypeError(f'The input flags were not given as a dictionary (i.e., {input_ini}).')
 #     else:
@@ -663,7 +747,8 @@ def resp(input_ini) -> list:
     else:
         flags_dict = parse_ini(input_ini)
 
-        if (flags_dict['basis_esp'] is not None) and (flags_dict['esp'] is not None):
+        # if (flags_dict['basis_esp'] is not None) and (flags_dict['esp'] is not None):
+        if flags_dict.get('basis_esp') and flags_dict.get('esp'):
             raise ValueError("Error: both a basis set(s) and an input file(s) are specified for the ESP - choose one.")
 
         print('\nDetermining Partial Atomic Charges\n')
@@ -695,7 +780,8 @@ def resp(input_ini) -> list:
             data['vdw_radii'] = vdw_radii
 
             points = []  # units: Bohr
-            if flags_dict['grid'] is not None:
+            # if flags_dict['grid'] is not None:
+            if flags_dict.get('grid'):
                 points = np.loadtxt(flags_dict['grid'][conf_n])
 
                 if 'Bohr' in str(conf.units()):
@@ -724,7 +810,8 @@ def resp(input_ini) -> list:
             #                                 The units of the coordinates in grid.dat are the same as those used to specify the molecule’s geometry,
             #                                 and the output quantities are always in atomic units."
             #   Atomic units: Hartrees/charge or Hartrees/e
-            if flags_dict['esp'] is None:
+            # if flags_dict['esp'] is None:
+            if not flags_dict.get('esp'):
                 psi4.set_output_file(f'{file_basename}-psi.out')
 
                 psi4.core.set_active_molecule(conf)

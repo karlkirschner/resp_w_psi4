@@ -1,12 +1,19 @@
 from __future__ import division, absolute_import, print_function
 
+import os
 import pytest
 import sys
 
 import numpy as np
 import psi4
 
-sys.path.insert(1, '../src/')
+# Check if we are in the 'tests' directory
+if not os.path.basename(os.getcwd()) == 'tests':
+    pytest.exit("ERROR: This test suite must be run from within the /tests directory "
+                "due to relative path dependencies for .ini and .xyz files.")
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+#sys.path.insert(1, '../src/')
 
 import driver as resp
 
@@ -96,8 +103,8 @@ def test_resp_constrained_a():
     print(f'{charges[1]-reference_charges}\n')
 
     assert np.allclose(charges[1], reference_charges, atol=5e-4)
-#
-#
+
+
 def test_resp_two_conformers_a():
     ''' One-stage fitting of charges using two conformations.
 
