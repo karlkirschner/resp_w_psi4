@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import os
 import pytest
 import sys
@@ -15,11 +13,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import driver as resp
 
-charges = resp.resp('phosphate.ini')
+charges = resp.resp('dmso_opt_c1.ini')
 
 print('Unrestrained Electrostatic Potential Charges')
 print(f'{charges[0]}\n')
 
 print('Restrained Electrostatic Potential (RESP) Charges')
 print(f'{charges[1]}\n')
-
