@@ -1,21 +1,23 @@
-"""
-A srcipt to generate van der Waals surface of molecules.
-"""
-
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
 
 
+"""
+A srcipt to generate van der Waals surface of molecules.
+"""
+
+
 def vdw_radii(element: str) -> float:
     """ Assign the van der Waals radius to an element.
           The values were taken from GAMESS.
+
         Args
             element : one or two letter element identifier
+
         Returns
             van der Waals radius (Angstrom)
     """
-
     if not isinstance(element, str):
         raise TypeError(f'The element was not given as a string (i.e., {element} variable).')
     else:
@@ -32,20 +34,19 @@ def vdw_radii(element: str) -> float:
 
 
 def surface(n_points: int) -> np.ndarray:
-    """ Computes approximately n points on a unit sphere.
+    """ Computes approximately `n_points` points on a unit sphere.
 
-        Code was adapted from GAMESS.
+        Code was adapted from GAMESS. 
 
         Args
-            n_points : number of surface points
+            n_points : the desired number of surface points.
 
         Returns
-            xyz coordinates of surface points
+            xyz coordinates of surface points.
 
-        Library dependencies
+        Dependencies
             numpy
     """
-
     if not isinstance(n_points, int):
         raise TypeError(f'The number of points was not given as an integer (i.e., {n_points} variable).')
     else:
@@ -122,7 +123,6 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
             electrostatic potential based method using charge restraints for deriving
             atomic charges: the RESP model J. Phys. Chem., 1993, 97, 10269-10280
     """
-
     if not isinstance(coordinates, np.ndarray):
         raise TypeError(f'The coordinate were not given as an ndarray (i.e., {coordinates} variable).')
     elif not isinstance(element_list, list):
@@ -142,7 +142,6 @@ def vdw_surface(coordinates: np.ndarray, element_list: list, scale_factor: float
             radii_scaled[element] = radii[element] * scale_factor
 
         # loop over atomic coordinates
-        # for element, coordinate in zip(element_list, coordinates): # TODO, alternative approach - test later.
         for i in range(len(coordinates)):
 
             # calculate approximate number of ESP grid points
