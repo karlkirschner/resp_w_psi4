@@ -61,7 +61,7 @@ def calculate_esp_metrics(q_fitted_resp: np.ndarray, data: dict) -> dict:
                                                      at grid points for each conformer/molecule.
 
         Returns:
-            dict: A dictionary containing 'true_esp_rmse' and 'true_esp_rrms'.
+            dict: A dictionary containing 'grid_esp_rmse' and 'grid_esp_rrms'.
     """
     all_recalculated_esp_values = []
     all_original_esp_values = []
@@ -72,7 +72,7 @@ def calculate_esp_metrics(q_fitted_resp: np.ndarray, data: dict) -> dict:
         # The inverse_dist matrix here is effectively 1/r_ij where i is grid point, j is atom
         inv_r_matrix_for_conformer = data['inverse_dist'][mol_idx]
 
-        # Original QM ESP values for this conformer
+        # Original QM ESP values for the conformer
         original_V_qm_conformer = data['esp_values'][mol_idx]
 
         # Recalculate ESP at grid points using fitted charges
@@ -83,18 +83,17 @@ def calculate_esp_metrics(q_fitted_resp: np.ndarray, data: dict) -> dict:
         all_recalculated_esp_values.extend(recalculated_V_esp_conformer)
         all_original_esp_values.extend(original_V_qm_conformer)
 
-    # lists to arrays
     all_recalculated_esp_values = np.array(all_recalculated_esp_values)
     all_original_esp_values = np.array(all_original_esp_values)
 
     print(f'\nNumber of predicted values along grid points: {len(all_recalculated_esp_values)}')
     print(f'Number of target values along grid points: {len(all_original_esp_values)}\n')
 
-    true_esp_rmse = calculate_rmse(predictions=all_recalculated_esp_values, targets=all_original_esp_values)
-    true_esp_rrms = calculate_rrms(rmse_value=true_esp_rmse, targets=all_original_esp_values)
+    grid_esp_rmse = calculate_rmse(predictions=all_recalculated_esp_values, targets=all_original_esp_values)
+    grid_esp_rrms = calculate_rrms(rmse_value=grid_esp_rmse, targets=all_original_esp_values)
 
-    return {'true_esp_rmse': true_esp_rmse,
-            'true_esp_rrms': true_esp_rrms}
+    return {'grid_esp_rmse': grid_esp_rmse,
+            'grid_esp_rrms': grid_esp_rrms}
 
 
 def esp_solve(A: np.ndarray, B: np.ndarray, warning_notes: list) -> tuple[np.ndarray, list[str]]:
@@ -149,25 +148,25 @@ def restraint(q: np.ndarray, A_unrestrained: np.ndarray,
                 (Eqs. 10, 13)
     """
     if not isinstance(q, np.ndarray):
-        raise TypeError(f'The input charges is not given as a np.ndarray (i.e., {q} variable).')
+        raise TypeError(f'The input charges is not given as a np.ndarray (i.e., {q}).')
     elif not isinstance(A_unrestrained, np.ndarray):
-        raise TypeError(f'The unrestrained A matrix is not given as a np.ndarray (i.e., {A_unrestrained} variable).')
+        raise TypeError(f'The unrestrained A matrix is not given as a np.ndarray (i.e., {A_unrestrained}).')
     elif not isinstance(resp_a, float):
-        raise TypeError(f'The resp_a is not given as a float (i.e., {resp_a} variable).')
+        raise TypeError(f'The resp_a is not given as a float (i.e., {resp_a}).')
     elif not isinstance(resp_b, float):
-        raise TypeError(f'The resp_b is not given as a float (i.e., {resp_b} variable).')
+        raise TypeError(f'The resp_b is not given as a float (i.e., {resp_b}).')
     elif not isinstance(ihfree, bool):
-        raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree} variable).')
+        raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree}).')
     elif not isinstance(symbols, list):
-        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols} variable).')
+        raise TypeError(f'The element symbols is not given as a list (i.e., {symbols}).')
     elif not isinstance(num_conformers, int):
-        raise TypeError(f'The num_conformers is not given as a int (i.e., {num_conformers} variable).')
+        raise TypeError(f'The num_conformers is not given as a int (i.e., {num_conformers}).')
     else:
         A = copy.deepcopy(A_unrestrained)
 
         for i in range(len(symbols)):
             # if an element is not hydrogen or if hydrogens are to be restrained
-            # hyperbolic restraint: reference 1 (Eqs. 10, 13)
+            # hyperbolic restraint: Reference 1 (Eqs. 10, 13)
             if not ihfree or symbols[i] != 'H':
                 A[i, i] = A_unrestrained[i, i] + resp_a/np.sqrt(q[i]**2 + resp_b**2) * num_conformers
 
@@ -202,27 +201,27 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
             numpy
     """
     if not isinstance(q, np.ndarray):
-        raise TypeError(f'The input charges are not given as a np.ndarray (i.e., {q} variable).')
+        raise TypeError(f'The input charges are not given as a np.ndarray (i.e., {q}).')
     elif not isinstance(A_unrestrained, np.ndarray):
-        raise TypeError(f'The unrestrained A matrix is not given as a np.ndarray (i.e., {A_unrestrained} variable).')
+        raise TypeError(f'The unrestrained A matrix is not given as a np.ndarray (i.e., {A_unrestrained}).')
     elif not isinstance(B, np.ndarray):
         raise TypeError(f'The B matrix is not given as a np.ndarray (i.e., {B} variable).')
     elif not isinstance(resp_a, float):
-        raise TypeError(f'The resp_a is not given as a float (i.e., {resp_a} variable).')
+        raise TypeError(f'The resp_a is not given as a float (i.e., {resp_a}).')
     elif not isinstance(resp_b, float):
-        raise TypeError(f'The resp_b is not given as a float (i.e., {resp_b} variable).')
+        raise TypeError(f'The resp_b is not given as a float (i.e., {resp_b}).')
     elif not isinstance(ihfree, bool):
-        raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree} variable).')
+        raise TypeError(f'The ihfree is not given as a boolean (i.e., {ihfree}).')
     elif not isinstance(symbols, list):
-        raise TypeError(f'The element symbols are not given as a list (i.e., {symbols} variable).')
+        raise TypeError(f'The element symbols are not given as a list (i.e., {symbols}).')
     elif not isinstance(toler, float):
-        raise TypeError(f'The toler is not given as a float (i.e., {toler} variable).')
+        raise TypeError(f'The toler is not given as a float (i.e., {toler}).')
     elif not isinstance(max_it, int):
-        raise TypeError(f'The max_it is not given as a int (i.e., {max_it} variable).')
+        raise TypeError(f'The max_it is not given as a int (i.e., {max_it}).')
     elif not isinstance(num_conformers, int):
-        raise TypeError(f'The num_conformers is not given as a int (i.e., {num_conformers} variable).')
+        raise TypeError(f'The num_conformers is not given as a int (i.e., {num_conformers}).')
     elif not isinstance(warning_notes, list):
-        raise TypeError(f'The warning_notes are not given as a list (i.e., {warning_notes} variable).')
+        raise TypeError(f'The warning_notes are not given as a list (i.e., {warning_notes}).')
     else:
         q_last = copy.deepcopy(q)
 
@@ -247,32 +246,66 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
         return q[:len(symbols)], warning_notes
 
 
-def intramolecular_constraints(constraint_charge: (dict, bool), equivalent_groups: (list, bool)):
-    """ Extracts intramolecular constraints from user constraint input
+def intramolecular_constraints(constraint_charge: dict[int, float],
+                               equivalent_groups:list[list[int]] | bool
+                              ) -> tuple[list[float], list[list[int]]]:
+    """ Construct linear constraint targets and index patterns for the ESP/RESP fit.
+
+        Converts user-specified intramolecular constraints into the
+        (target_values, index_lists) representation used to augment the linear system in `fit`.
+
+        Two constraint types are supported:
+
+        1) Fixed per-atom charges (i.e., absolute constraints)
+           Provided via `constraint_charge` as a mapping from 1-based atom index to
+           a fixed charge value:
+               {atom_index: charge, ...}
+           Each entry produces a constraint of the form:
+               q_atom = charge
+
+        2) Equal-charge constraints (i.e., equivalencing)
+           Provided via `equivalent_groups` as a list of atom-index groups:
+               [[i, j, k], [m, n], ...]
+           Each group is expanded into pairwise difference constraints enforcing
+           equality along the chain:
+               q_i - q_j = 0, q_j - q_k = 0, ...
+           (i.e., constraints with target value 0.0 and index lists containing one
+           negative and one positive atom index.)
 
         Args
-            constraint_charge : a list of lists of charges and atom indices list, 
-                e.g., [[0, [1, 2]], [1, [3, 4]]].
-                The sum of charges on 1 and 2 will equal 0.
-                The sum of charges on 3 and 4 will equal 1.
-            equivalent_groups : a list of lists of indices of atoms to have equal charge,
-                e.g., [[1, 2], [3, 4]]
-                atoms 1 and 2 will have equal charge
-                atoms 3 and 4 will have equal charge
+            constraint_charge
+                Dictionary mapping atom indices for constraining charge values, or an
+                empty value (i.e., {}) to indicate no charge constraints.
+                Example (acetic_acid): {5: 0.8043, 6: -0.6614, 7: 0.45336, 8: -0.6002}
+
+            equivalent_groups
+                A nested list of indices to be constrained equal, or a
+                False boolean value to indicate no equivalencing constraints.
+                Example (methyl hydrogens): [[2, 3, 4]]
 
         Returns
-            constrained_charges (list) : fixed charges
-            constrained_indices (list) : list of lists of indices of atoms in a constraint;
-                a negative number before an index means that atom's charge will be subtracted.
+            constrained_charges:
+                Target values for each constraint equation.
+                Example: [0.8043, -0.6614, 0.4533, -0.6002, 0.0, 0.0]
+
+            constrained_indices:
+                Index patterns defining each constraint equation. Positive indices
+                indicate charges added with coefficient +1; negative indices indicate
+                charges added with coefficient -1.
+                Example: [[5], [6], [7], [8], [-2, 3], [-3, 4]]
 
         Notes
-            Atom indices starts with 1 not 0.
-            Total charge constraint is added by default for the first molecule.
+            - Atom indices starts with 1 not 0.
+            - This function does not add the *total molecular charge* constraint; that
+              constraint is handled separately in `fit`.
+            - Unlike the original Psi4NumPy implementation, `constraint_charge` no
+              longer supports "sum of charges over an atom set equals value" directly;
+              it encodes fixed charges on individual atoms.
     """
-    if not isinstance(constraint_charge, (dict, bool)):
-        raise TypeError(f'The input options are not a dictionary or boolean (i.e., {constraint_charge} variable).')
+    if not isinstance(constraint_charge, (dict)):
+        raise TypeError(f'The constraint_charge is not a dictionary (i.e., {constraint_charge}).')
     elif not isinstance(equivalent_groups, (list, bool)):
-        raise TypeError(f'The input option is not a list or boolean (i.e., {equivalent_groups} variable).')
+        raise TypeError(f'The equivalent_groups is not a list or boolean (i.e., {equivalent_groups}).')
     else:
         constrained_charges = []
         constrained_indices = []
@@ -285,7 +318,7 @@ def intramolecular_constraints(constraint_charge: (dict, bool), equivalent_group
             for i in equivalent_groups:
                 for j in range(1, len(i)):
                     group = []
-                    constrained_charges.append(0.0)  # Target value for equivalent charge constraints is zero (q_A - q_B = 0)
+                    constrained_charges.append(0.0)  # Target value for equivalent charge constraints (q_A - q_B = 0)
                     group.append(-i[j-1])
                     group.append(i[j])
                     constrained_indices.append(group)
@@ -314,9 +347,9 @@ def fit(options: dict, data: dict):
                 (Eqs. 12-14)
     """
     if not isinstance(options, dict):
-        raise TypeError(f'The input options are not a dictionary (i.e., {options} variable).')
+        raise TypeError(f'The input options are not a dictionary (i.e., {options}).')
     elif not isinstance(data, dict):
-        raise TypeError(f'The input options are not a dictionary (i.e., {data} variable).')
+        raise TypeError(f'The input options are not a dictionary (i.e., {data}).')
     else:
         q_fitted = []
         fitting_methods = []
@@ -399,13 +432,13 @@ def fit(options: dict, data: dict):
         rmse = calculate_rmse(predictions=predictions, targets=B)
         print(f"Linear-system residual RMSE: {rmse}")
 
-        # real fitting error: original QM ESP values and the ESP values recalculated from your fitted charges at the original grid points
+        # Real fitting error: original QM ESP values and the ESP values recalculated from the fitted charges at the original grid points
         esp_metrics = calculate_esp_metrics(q_fitted_resp=q_fitted_resp, data=data)
-        print(f"True ESP RMSE (vs original grid points): {esp_metrics['true_esp_rmse']}")
-        print(f"True ESP RRMS (vs original grid points): {esp_metrics['true_esp_rrms']}\n")
+        print(f"True ESP RMSE (vs original grid points): {esp_metrics['grid_esp_rmse']}")
+        print(f"True ESP RRMS (vs original grid points): {esp_metrics['grid_esp_rrms']}\n")
 
-        data['esp_rmse_true'] = esp_metrics['true_esp_rmse'] # Store RESP metrics
-        data['esp_rrms_true'] = esp_metrics['true_esp_rrms'] # Store RESP metrics
+        data['esp_rmse_grid'] = esp_metrics['grid_esp_rmse'] # Store metrics
+        data['esp_rrms_true'] = esp_metrics['grid_esp_rrms']
 
         # RESP
         if options['restraint']:
@@ -419,11 +452,11 @@ def fit(options: dict, data: dict):
             q_fitted.append(q_fitted_resp)
 
             resp_metrics = calculate_esp_metrics(q_fitted_resp=q_fitted_resp, data=data)
-            print(f"True RESP RMSE (vs original grid points): {resp_metrics['true_esp_rmse']}")
-            print(f"True RESP RRMS (vs original grid points): {resp_metrics['true_esp_rrms']}")
+            print(f"True RESP RMSE (vs original grid points): {resp_metrics['grid_esp_rmse']}")
+            print(f"True RESP RRMS (vs original grid points): {resp_metrics['grid_esp_rrms']}")
 
-            data['resp_rmse_true'] = resp_metrics['true_esp_rmse'] # Store RESP metrics
-            data['resp_rrms_true'] = resp_metrics['true_esp_rrms'] # Store RESP metrics
+            data['resp_rmse_grid'] = resp_metrics['grid_esp_rmse']
+            data['resp_rrms_true'] = resp_metrics['grid_esp_rrms']
 
         data['fitted_charges'] = q_fitted
         data['fitting_methods'] = fitting_methods

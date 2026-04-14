@@ -46,7 +46,7 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
                     - 'fitting_methods' : list[str] or iterable containing 'esp'/'resp'
                     - 'fitted_charges' : list[np.ndarray] (one array per method)
                 Optional keys for statistics:
-                    - 'esp_rmse_true', 'resp_rmse_true', 'esp_rrms_true', 'resp_rrms_true'
+                    - 'esp_rmse_grid', 'resp_rmse_grid', 'esp_rrms_true', 'resp_rrms_true'
             output_file
                 Path to the output report file to be (over)written.
             Return
@@ -179,13 +179,13 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
 
             # RMSE row
             outfile.write(f"{' ':8s}{'RMSE':<10s}")
-            if 'esp' in data['fitting_methods'] and 'esp_rmse_true' in data:
-                outfile.write(f"{data['esp_rmse_true']:12.5f}")
+            if 'esp' in data['fitting_methods'] and 'esp_rmse_grid' in data:
+                outfile.write(f"{data['esp_rmse_grid']:12.5f}")
             else:
                 outfile.write(f"{'N/A':>12s}") # If ESP RMSE not available
             
-            if 'resp' in data['fitting_methods'] and 'resp_rmse_true' in data:
-                outfile.write(f"{data['resp_rmse_true']:12.5f}")
+            if 'resp' in data['fitting_methods'] and 'resp_rmse_grid' in data:
+                outfile.write(f"{data['resp_rmse_grid']:12.5f}")
             else:
                 outfile.write(f"{'N/A':>12s}") # If RESP RMSE not available
             outfile.write('\n')
