@@ -438,7 +438,7 @@ def fit(options: dict, data: dict):
         print(f"True ESP RRMS (vs original grid points): {esp_metrics['grid_esp_rrms']}\n")
 
         data['esp_rmse_grid'] = esp_metrics['grid_esp_rmse'] # Store metrics
-        data['esp_rrms_true'] = esp_metrics['grid_esp_rrms']
+        data['esp_rrms_grid'] = esp_metrics['grid_esp_rrms']
 
         # RESP
         if options['restraint']:
@@ -456,7 +456,7 @@ def fit(options: dict, data: dict):
             print(f"True RESP RRMS (vs original grid points): {resp_metrics['grid_esp_rrms']}")
 
             data['resp_rmse_grid'] = resp_metrics['grid_esp_rmse']
-            data['resp_rrms_true'] = resp_metrics['grid_esp_rrms']
+            data['resp_rrms_grid'] = resp_metrics['grid_esp_rrms']
 
         data['fitted_charges'] = q_fitted
         data['fitting_methods'] = fitting_methods
