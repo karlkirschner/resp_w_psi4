@@ -173,3 +173,48 @@ def test_resp_two_conformers_b():
     print(f'{charges[1]-reference_charges}\n')
 
     assert np.allclose(charges[1], reference_charges, atol=1.5e-5)
+
+
+def test_bromoethene():
+    '''  Single-stage fitting of charges.
+    '''
+    reference_charges = np.array([-0.22793428, 0.14970713, 0.17055694, -0.23219228,
+                                  -0.08681686, 0.22667934])
+
+    charges = resp.resp('bromoethene.ini')
+
+    print('Unrestrained Electrostatic Potential Charges')
+    print(f'{charges[0]}\n')
+
+    print('Restrained Electrostatic Potential (RESP) Charges')
+    print(f'{charges[1]}\n')
+
+    print('Reference RESP Charges (via RED-III 5)')
+    print(f'{reference_charges}\n')
+
+    print('Difference')
+    print(f'{charges[1]-reference_charges}\n')
+
+    assert np.allclose(charges[1], reference_charges, atol=1.5e-5)
+
+def test_bromoethene_x():
+    '''  Single-stage fitting of charges.
+    '''
+    reference_charges = np.array([-0.37318215, 0.16577433, 0.21990568, -0.00848194,
+                                  -0.26039446, 0.17776180, 0.07861675])
+
+    charges = resp.resp('bromoethene_x.ini')
+
+    print('Unrestrained Electrostatic Potential Charges')
+    print(f'{charges[0]}\n')
+
+    print('Restrained Electrostatic Potential (RESP) Charges')
+    print(f'{charges[1]}\n')
+
+    print('Reference RESP Charges (via RED-III 5)')
+    print(f'{reference_charges}\n')
+
+    print('Difference')
+    print(f'{charges[1]-reference_charges}\n')
+
+    assert np.allclose(charges[1], reference_charges, atol=1.5e-5)
