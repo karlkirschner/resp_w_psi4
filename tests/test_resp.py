@@ -46,7 +46,7 @@ def test_resp_unconstrained_a():
     print('Difference')
     print(f'{charges[1]-reference_charges}\n')
 
-    assert np.allclose(charges[1], reference_charges, atol=5e-4)
+    assert np.allclose(charges[1], reference_charges, atol=5.0e-4)
 
 
 def test_resp_unconstrained_b():
@@ -77,7 +77,7 @@ def test_resp_unconstrained_b():
     print('Difference')
     print(f'{charges[1]-reference_charges}\n')
 
-    assert np.allclose(charges[1], reference_charges, atol=5e-4)
+    assert np.allclose(charges[1], reference_charges, atol=5.0e-4)
 
 
 def test_resp_constrained_a():
@@ -112,7 +112,7 @@ def test_resp_constrained_a():
     print('Difference')
     print(f'{charges[1]-reference_charges}\n')
 
-    assert np.allclose(charges[1], reference_charges, atol=5e-4)
+    assert np.allclose(charges[1], reference_charges, atol=5.0e-4)
 
 
 def test_resp_two_conformers_a():
@@ -141,7 +141,7 @@ def test_resp_two_conformers_a():
     print('Difference')
     print(f'{charges[1]-reference_charges}\n')
 
-    assert np.allclose(charges[1], reference_charges, atol=1e-5)
+    assert np.allclose(charges[1], reference_charges, atol=1.0e-5)
 
 
 def test_resp_two_conformers_b():
@@ -195,7 +195,8 @@ def test_bromoethene():
     print('Difference')
     print(f'{charges[1]-reference_charges}\n')
 
-    assert np.allclose(charges[1], reference_charges, atol=1.5e-5)
+    assert np.allclose(charges[1], reference_charges, atol=1.0e-5)
+
 
 def test_bromoethene_x():
     '''  Single-stage fitting of charges.
@@ -217,4 +218,4 @@ def test_bromoethene_x():
     print('Difference')
     print(f'{charges[1]-reference_charges}\n')
 
-    assert np.allclose(charges[1], reference_charges, atol=1.5e-5)
+    assert np.allclose(charges[1], reference_charges, atol=1.0e-5)
