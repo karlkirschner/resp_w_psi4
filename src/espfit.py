@@ -22,33 +22,68 @@ def calculate_rmse(predictions: np.ndarray, targets: np.ndarray) -> float:
     """
     if predictions.shape != targets.shape:
         raise ValueError("Predictions and targets must have the same shape.")
+    elif not isinstance(predictions, np.ndarray):
+        raise TypeError(f'The input charges is not given as a np.ndarray (i.e., {predictions}).')
+    elif not isinstance(targets, np.ndarray):
+        raise TypeError(f'The target values is not given as a np.ndarray (i.e., {targets}).')
     else:
         return np.sqrt(np.mean((predictions - targets) ** 2))
 
 
-def calculate_rrms(rmse_value: float, targets: np.ndarray) -> float:
-    """ Calculates the Relative Root Mean Square (RRMS) given an RMSE value and target values.
+def calculate_rrmse(rmse_value: float, targets: np.ndarray) -> float:
+    """ Calculates the Relative Root Mean Square (rrmse) given an RMSE value and target values.
 
         Args:
             rmse_value: pre-calculated RMSE value
             targets:    target (observed|actual) values
 
         Returns:
-            RRMS value (dimensionless)
+            rrmse value (dimensionless)
+
+        Sources:
+            Cox, S. R. & Williams, D. E. Representation of the molecular electrostatic potential
+                by a net atomic charge model J. Comput. Chem., 1981, 2, 304-323.
+            Besler, B. H.; Merz Jr., K. M. & Kollman, P. A. Atomic charges derived from
+                semiempirical methods J. Comput. Chem., 1990, 11, 431-439.
     """
-    rms_targets = np.sqrt(np.mean(targets ** 2)) # rms
+    target_potential = np.sqrt(np.mean(targets ** 2))
 
-    if rms_targets == 0:
-        print("Warning: RMS of target values is zero, RRMS cannot be calculated.")
+    if target_potential == 0:
+        print("Warning: RMS of target values is zero, rrmse cannot be calculated.")
         return np.nan
+    elif not isinstance(rmse_value, (float, int)):
+        raise TypeError(f'The input rmse_value is not given as a float or int (i.e., {rmse_value}).')
+    elif not isinstance(targets, np.ndarray):
+        raise TypeError(f'The target values is not given as a np.ndarray (i.e., {targets}).')
     else:
-        rrms = rmse_value / rms_targets # relative
+        rrmse = rmse_value / target_potential
 
-    return rrms
+    return rrmse
+
+
+def calculate_rrmsee_alt(predictions: float, targets: np.ndarray) -> float:
+    """ Calculates the Relative Root Mean Square (rrmse) given an RMSE value and target values.
+
+        Args:
+            predictions: predicted values
+            targets    : target (observed|actual) values
+
+        Returns:
+            rrmse value (dimensionless)
+
+        Sources:
+            Cox, S. R. & Williams, D. E. Representation of the molecular electrostatic potential
+                by a net atomic charge model J. Comput. Chem., 1981, 2, 304-323.
+            Besler, B. H.; Merz Jr., K. M. & Kollman, P. A. Atomic charges derived from
+                semiempirical methods J. Comput. Chem., 1990, 11, 431-439.
+    """
+    rrmse = np.sqrt(np.sum((predictions - targets)**2) / np.sum(targets**2))
+
+    return rrmse
 
 
 def calculate_esp_metrics(q_fitted_resp: np.ndarray, data: dict) -> dict:
-    """ Calculates the Root Mean Square Error (RMSE) and Relative Root Mean Square (RRMS)
+    """ Calculates the Root Mean Square Error (RMSE) and Relative Root Mean Square (rrmse)
         of the fitted charges against the original QM ESP values at the grid points.
 
         Args:
@@ -61,7 +96,7 @@ def calculate_esp_metrics(q_fitted_resp: np.ndarray, data: dict) -> dict:
                                                      at grid points for each conformer/molecule.
 
         Returns:
-            dict: A dictionary containing 'grid_esp_rmse' and 'grid_esp_rrms'.
+            dict: A dictionary containing 'grid_esp_rmse' and 'grid_esp_rrmse'.
     """
     all_recalculated_esp_values = []
     all_original_esp_values = []
@@ -90,10 +125,12 @@ def calculate_esp_metrics(q_fitted_resp: np.ndarray, data: dict) -> dict:
     print(f'Number of target values along grid points: {len(all_original_esp_values)}\n')
 
     grid_esp_rmse = calculate_rmse(predictions=all_recalculated_esp_values, targets=all_original_esp_values)
-    grid_esp_rrms = calculate_rrms(rmse_value=grid_esp_rmse, targets=all_original_esp_values)
+    grid_esp_rrmse = calculate_rrmse(rmse_value=grid_esp_rmse, targets=all_original_esp_values)
+
+    # grid_esp_rrmse = calculate_rrmsee(predictions=all_recalculated_esp_values, targets=all_original_esp_values)
 
     return {'grid_esp_rmse': grid_esp_rmse,
-            'grid_esp_rrms': grid_esp_rrms}
+            'grid_esp_rrmse': grid_esp_rrmse}
 
 
 def esp_solve(A: np.ndarray, B: np.ndarray, warning_notes: list) -> tuple[np.ndarray, list[str]]:
@@ -435,10 +472,10 @@ def fit(options: dict, data: dict):
         # Real fitting error: original QM ESP values and the ESP values recalculated from the fitted charges at the original grid points
         esp_metrics = calculate_esp_metrics(q_fitted_resp=q_fitted_resp, data=data)
         print(f"True ESP RMSE (vs original grid points): {esp_metrics['grid_esp_rmse']}")
-        print(f"True ESP RRMS (vs original grid points): {esp_metrics['grid_esp_rrms']}\n")
+        print(f"True ESP RRMSE (vs original grid points): {esp_metrics['grid_esp_rrmse']}\n")
 
         data['esp_rmse_grid'] = esp_metrics['grid_esp_rmse'] # Store metrics
-        data['esp_rrms_grid'] = esp_metrics['grid_esp_rrms']
+        data['esp_rrmse_grid'] = esp_metrics['grid_esp_rrmse']
 
         # RESP
         if options['restraint']:
@@ -453,10 +490,10 @@ def fit(options: dict, data: dict):
 
             resp_metrics = calculate_esp_metrics(q_fitted_resp=q_fitted_resp, data=data)
             print(f"True RESP RMSE (vs original grid points): {resp_metrics['grid_esp_rmse']}")
-            print(f"True RESP RRMS (vs original grid points): {resp_metrics['grid_esp_rrms']}")
+            print(f"True RESP RRMSE (vs original grid points): {resp_metrics['grid_esp_rrmse']}")
 
             data['resp_rmse_grid'] = resp_metrics['grid_esp_rmse']
-            data['resp_rrms_grid'] = resp_metrics['grid_esp_rrms']
+            data['resp_rrmse_grid'] = resp_metrics['grid_esp_rrmse']
 
         data['fitted_charges'] = q_fitted
         data['fitting_methods'] = fitting_methods
