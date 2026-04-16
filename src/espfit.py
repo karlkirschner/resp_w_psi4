@@ -214,7 +214,7 @@ def iterate(q: np.ndarray, A_unrestrained: np.ndarray, B: np.ndarray,
             resp_a: float, resp_b: float, toler: float,
             max_it: int, num_conformers: int,
             ihfree: bool, symbols: list,
-            warning_notes: list) -> np.ndarray:
+            warning_notes: list) -> tuple[np.ndarray, list]:
     """ Iterates the RESP fitting procedure.
 
         Args:
@@ -351,14 +351,15 @@ def intramolecular_constraints(constraint_charge: dict[int, float],
             for key, value in constraint_charge.items():
                 constrained_charges.append(value)
                 constrained_indices.append([key])
-        if equivalent_groups:
-            for i in equivalent_groups:
-                for j in range(1, len(i)):
-                    group = []
-                    constrained_charges.append(0.0)  # Target value for equivalent charge constraints (q_A - q_B = 0)
-                    group.append(-i[j-1])
-                    group.append(i[j])
-                    constrained_indices.append(group)
+        if isinstance(equivalent_groups, list):
+            if equivalent_groups:
+                for i in equivalent_groups:
+                    for j in range(1, len(i)):
+                        group = []
+                        constrained_charges.append(0.0)  # Target value for equivalent charge constraints (q_A - q_B = 0)
+                        group.append(-i[j-1])
+                        group.append(i[j])
+                        constrained_indices.append(group)
 
         return constrained_charges, constrained_indices
 
@@ -406,7 +407,8 @@ def fit(options: dict, data: dict):
         natoms = data['natoms']
         ndim = natoms + len(constraint_charges) + 1
 
-        # A: the matrix of coefficients in the linear system of equations (A mathbf{q} = B) that is solved to determine the partial atomic charges mathbf{q}.
+        # A: the matrix of coefficients in the linear system of equations (A mathbf{q} = B) that is solved to determine
+        #   the partial atomic charges mathbf{q}.
         # mathbf{q} = vector of unknowns (i.e. the partial atomic charges)
         # B: target vector that consists of known values
         A = np.zeros((ndim, ndim))
@@ -423,7 +425,8 @@ def fit(options: dict, data: dict):
             a_matrix = np.einsum("ij, ik -> jk", r_inverse, r_inverse)
 
             # Construct b_vector: b_j = sum_i (V_i/r_ij) -> i.e., esp/r
-            # b_vector: essentially a sum over all grid points (i) for each atom (j) of V_i / r_ij. This term directly relates the target ESP at the grid points to the atomic centers.
+            # b_vector: essentially a sum over all grid points (i) for each atom (j) of V_i / r_ij. This term directly
+            #   relates the target ESP at the grid points to the atomic centers.
             b_vector = np.einsum('i, ij->j', V, r_inverse)
 
             # Weight the conformer/molecule and go ahead and square them eventual multiplying with least-square fit formula
