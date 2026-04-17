@@ -46,7 +46,7 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
                     - 'fitting_methods' : list[str] or iterable containing 'esp'/'resp'
                     - 'fitted_charges' : list[np.ndarray] (one array per method)
                 Optional keys for statistics:
-                    - 'esp_rmse_grid', 'resp_rmse_grid', 'esp_rrms_grid', 'resp_rrms_grid'
+                    - 'esp_rmse_grid', 'resp_rmse_grid', 'esp_rrmse_grid', 'resp_rrmse_grid'
             output_file
                 Path to the output report file to be (over)written.
             Return
@@ -164,7 +164,10 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
 
             outfile.write(f"\n{' ':8s}Total Charge:{' ':4s}")
             for charges_set in data['fitted_charges']: # Iterate through the list of charge sets
-                outfile.write(f'{np.sum(charges_set):12.8f}')
+                total = float(np.sum(charges_set))
+                if abs(total) < 5e-15:   # pick a tolerance appropriate for your print precision
+                    total = 0.0
+                outfile.write(f'{np.sum(total):12.8f}')
             outfile.write('\n')
 
             outfile.write(f"\n{' ':4s}Fitting Statistics:\n")
@@ -190,17 +193,17 @@ def write_results(flags_dict: dict, data: dict, output_file: str):
                 outfile.write(f"{'N/A':>12s}") # If RESP RMSE not available
             outfile.write('\n')
 
-            # RRMS row
-            outfile.write(f"{' ':8s}{'RRMS':<10s}")
-            if 'esp' in data['fitting_methods'] and 'esp_rrms_grid' in data:
-                outfile.write(f"{data['esp_rrms_grid']:12.5f}")
+            # RRMSE row
+            outfile.write(f"{' ':8s}{'RRMSE':<10s}")
+            if 'esp' in data['fitting_methods'] and 'esp_rrmse_grid' in data:
+                outfile.write(f"{data['esp_rrmse_grid']:12.5f}")
             else:
-                outfile.write(f"{'N/A':>12s}") # If ESP RRMS not available
+                outfile.write(f"{'N/A':>12s}") # If ESP RRMSE not available
 
-            if 'resp' in data['fitting_methods'] and 'resp_rrms_grid' in data:
-                outfile.write(f"{data['resp_rrms_grid']:12.5f}")
+            if 'resp' in data['fitting_methods'] and 'resp_rrmse_grid' in data:
+                outfile.write(f"{data['resp_rrmse_grid']:12.5f}")
             else:
-                outfile.write(f"{'N/A':>12s}") # If RESP RRMS not available
+                outfile.write(f"{'N/A':>12s}") # If RESP RRMSE not available
             outfile.write('\n')
 
 
