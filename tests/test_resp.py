@@ -219,3 +219,49 @@ def test_bromoethene_x():
     print(f'{charges[1]-reference_charges}\n')
 
     assert np.allclose(charges[1], reference_charges, atol=1.0e-5)
+
+
+def test_methanol():
+    '''  Single-stage fitting of charges.
+    '''
+    reference_charges = np.array([0.10493159, 0.03719950, 0.03719950, 0.03719950,
+                                  -0.60185099, 0.38532091])
+
+    charges = resp.resp('methanol.ini')
+
+    print('Unrestrained Electrostatic Potential Charges')
+    print(f'{charges[0]}\n')
+
+    print('Restrained Electrostatic Potential (RESP) Charges')
+    print(f'{charges[1]}\n')
+
+    print('Reference RESP Charges (via RED-III 5)')
+    print(f'{reference_charges}\n')
+
+    print('Difference')
+    print(f'{charges[1]-reference_charges}\n')
+
+    assert np.allclose(charges[1], reference_charges, atol=1.0e-5)
+
+
+def test_methanol_x():
+    '''  Single-stage fitting of charges.
+    '''
+    reference_charges = np.array([-0.03646927, 0.05658907, 0.05658907, 0.05658907,
+                                  -0.32640632, 0.30812274, -0.05750718, -0.05750718])
+
+    charges = resp.resp('methanol_x.ini')
+
+    print('Unrestrained Electrostatic Potential Charges')
+    print(f'{charges[0]}\n')
+
+    print('Restrained Electrostatic Potential (RESP) Charges')
+    print(f'{charges[1]}\n')
+
+    print('Reference RESP Charges (via RED-III 5)')
+    print(f'{reference_charges}\n')
+
+    print('Difference')
+    print(f'{charges[1]-reference_charges}\n')
+
+    assert np.allclose(charges[1], reference_charges, atol=1.0e-5)
