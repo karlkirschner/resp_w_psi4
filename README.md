@@ -45,3 +45,4 @@ The following files are included:
 
 Please cite this article if you use this program:
 - [[Alenaizan:19](https://doi.org/10.1002/qua.26035)] Alenaizan A., Burns L. A., Sherrill C. D. *Python implementation of the restrained electrostatic potential charge model.* *Int. J. Quantum Chem.* **120**, e26035 (2020).
+- Kirschner KN, manuscript in preparation (2026)
