@@ -27,7 +27,7 @@ This version consolidates the workflow into an easy-to-follow pipeline:
 The following files are included:
 - `resp/espfit.py`: Restrained electrostatic potential (RESP) fitting procedure
 - `resp/driver.py`: Main driver.
-- `resp/tests/test_resp.py`: PyTest script containing:
+- `resp/tests/test_resp.py`: PyTest script containing different fitting scenarios:
   - `test_resp_unconstrained_a()`
   - `test_resp_unconstrained_b()`
   - `test_resp_constrained_a()`
