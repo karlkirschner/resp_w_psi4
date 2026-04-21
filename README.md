@@ -43,6 +43,6 @@ The following files are included:
 ## References
 - [[Bayly:93:10269-10280](https://pubs.acs.org/doi/abs/10.1021/j100142a004)] Bayly C. I., Cieplak, P., Cornell, W., Kollman, P.A.,  *A well-behaved electrostatic potential based method using charge restraints for deriving atomic charges: the RESP model.* *J. Phys. Chem.* **97**, 10269 (1993).
 
-Please cite this article if you use this program:
+Please cite the following article if you use this program:
 - [[Alenaizan:19](https://doi.org/10.1002/qua.26035)] Alenaizan A., Burns L. A., Sherrill C. D. *Python implementation of the restrained electrostatic potential charge model.* *Int. J. Quantum Chem.* **120**, e26035 (2020).
 - Kirschner KN, manuscript in preparation (2026)
