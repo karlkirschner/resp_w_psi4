@@ -20,8 +20,8 @@ This version consolidates the workflow into an easy-to-follow pipeline:
 
 ### Python standard library
 - `configparser`
-- `os`
 - `copy`
+- `os`
 - `sys`
 
 ### Third-party
@@ -31,8 +31,8 @@ This version consolidates the workflow into an easy-to-follow pipeline:
 
 ## Code
 The following files are included:
-- `resp/espfit.py`: Restrained electrostatic potential (RESP) fitting procedure
-- `resp/driver.py`: Main driver.
+- `resp/espfit.py`: Restrained electrostatic potential (RESP) fitting procedure and metrics
+- `resp/driver.py`: Main driver
 - `resp/tests/test_resp.py`: PyTest script containing different fitting scenarios:
   - `test_resp_unconstrained_a()`
   - `test_resp_unconstrained_b()`
