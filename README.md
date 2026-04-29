@@ -1,14 +1,20 @@
-Psi4-Compatible Restrained Electrostatic Potential
-==================================================
+# Restrained Electrostatic Potential (RESP) with Extra Point Fitting
+- Psi4-Compatible RESP
+> Compute RESP partial atomic charges (PACs) from Psi4 electrostatic potentials. This tool supports fitting to off-center points, such as electron lone-pair regions and sigma holes, for improved electrostatic modeling.
 
-This code is a refactoring of the Python RESP code developed by Alenaizan et al. (https://github.com/cdsgroup/resp), which is a plugin for the Psi4 quantum chemistry package.
+---
+## Overview
 
-The revised code extends the implementation of Alenaizan et al. by enabling partial atomic charge (PAC) fitting onto extra/dummy particles, and by introducing a standardized configuration workflow based on `.ini` inputs. This facilitates modeling molecules that exhibit strongly anisotropic electrostatics (e.g., $\sigma$-holes and electron lone pairs). It also supports straightforward reproduction of the workflow and the resulting PAC. The root mean square error (RMSE) and relative root mean square error (RRMSE) metrics are also introduced into the code and the resulting output file to assess the fit quality.
+This tool is a refactoring of the Python RESP code developed by Alenaizan et al. (https://github.com/cdsgroup/resp), which is a plugin for the Psi4 quantum chemistry package. This revision extends the original code by enabling PAC fitting onto virtual sites (a.k.a., extra points, dummy particles), facilitating the modeling of molecules that exhibit strongly anisotropic electrostatics (e.g., $\sigma$-holes and electron lone pairs). Additionally, a standardized configuration workflow was introduced based on `.ini` inputs, enabling straightforward reproduction of workflows and their resulting PACs. The root mean square error (RMSE) and relative root mean square error (RRMSE) metrics are also included for fit quality assessment.
 
+## Features
 This version consolidates the workflow into an easy-to-follow pipeline:
 - Molecular structures and fitting settings are read from external XYZ-formatted and `.ini` files.
-- Grid and ESP generation are performed, or loaded, as before.
+- Grid and ESP generation are performed using Psi4, or can be loaded from a previous calculation.
 - PAC fitting is carried out using an updated multi-center formulation that includes both nuclei and extra/dummy points as charge sites.
+- Multiple conformers can be used to generate an averaged PAC set.
+- Charge equivalency and restraints can also be specified to specific atoms.
+- RMSE and RRMSE metrics are computed.
 
 ## Dependencies
 
@@ -41,8 +47,8 @@ The following files are included:
 - `resp/stage2_helper.py`: Helper utilities for two-stage fitting
 
 ## References
-- [[Bayly:93:10269-10280](https://pubs.acs.org/doi/abs/10.1021/j100142a004)] Bayly C. I., Cieplak, P., Cornell, W., Kollman, P.A.,  *A well-behaved electrostatic potential based method using charge restraints for deriving atomic charges: the RESP model.* *J. Phys. Chem.* **97**, 10269 (1993).
+* [[Bayly:93:10269-10280](https://pubs.acs.org/doi/abs/10.1021/j100142a004)] Bayly C. I., Cieplak, P., Cornell, W., Kollman, P.A.,  *A well-behaved electrostatic potential based method using charge restraints for deriving atomic charges: the RESP model.* *J. Phys. Chem.* **97**, 10269 (1993).
 
 Please cite the following articles if you use this program:
-- [[Alenaizan:19](https://doi.org/10.1002/qua.26035)] Alenaizan A., Burns L. A., Sherrill C. D. *Python implementation of the restrained electrostatic potential charge model.* *Int. J. Quantum Chem.* **120**, e26035 (2020).
-- Kirschner KN, manuscript in preparation (2026)
+* [[Alenaizan:19](https://doi.org/10.1002/qua.26035)] Alenaizan A., Burns L. A., Sherrill C. D. *Python implementation of the restrained electrostatic potential charge model.* *Int. J. Quantum Chem.* **120**, e26035 (2020).
+* Kirschner KN, manuscript in preparation (2026)
