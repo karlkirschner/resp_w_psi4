@@ -10,7 +10,7 @@ This tool is a refactoring of the Python RESP code developed by Alenaizan et al.
 This version consolidates the workflow into an easy-to-follow pipeline:
 - Molecular structures and fitting settings are read from external XYZ-formatted and `.ini` files.
 - Grid and ESP generation are performed using Psi4, or can be loaded from a previous calculation.
-- PAC fitting is carried out using an updated multi-center formulation that includes both nuclei and extra/dummy points as charge sites.
+- PAC fitting is performed using an updated multi-center formulation that includes both nuclei and extra points as charge sites.
 - Multiple conformers can be used to generate an averaged PAC set.
 - Charge equivalency and restraints can also be specified to specific atoms.
 - RMSE and RRMSE metrics are computed.
