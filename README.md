@@ -1,5 +1,4 @@
-# Restrained Electrostatic Potential (RESP) with Extra Point Fitting
-- Psi4-Compatible RESP
+# Restrained Electrostatic Potential (RESP) Charges with Extra Point Fitting
 > Compute RESP partial atomic charges (PACs) from Psi4 electrostatic potentials. This tool supports fitting to off-center points, such as electron lone-pair regions and sigma holes, for improved electrostatic modeling.
 
 ---
